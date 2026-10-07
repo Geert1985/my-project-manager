@@ -346,17 +346,22 @@ function renderCheck() {
   if (!check) { currentView = "dashboard"; return render(); }
 
   const protocol = getProtocol(check.protocolId);
+  const protocolVersion = check.protocolVersionId
+    ? getProtocolVersion(check.protocolVersionId)
+    : null;
   const sourceVersion = getSourceVersion(check.sourceVersionId);
   const source = sourceVersion ? getSource(sourceVersion.sourceId) : null;
   const results = getCheckResults(check.id);
-  const items = getProtocolItems(check.protocolId);
+  const items = protocolVersion
+    ? getProtocolItemsForVersion(protocolVersion.id)
+    : getProtocolItems(check.protocolId);
   const resultByItem = new Map(results.map(result => [result.protocolItemId, result]));
 
   app.innerHTML = `
     <div class="card">
       <button class="secondary" onclick="returnFromCheck()">← Terug</button>
       <h2 style="margin-top:12px">Controle</h2>
-      <p><strong>Protocol:</strong> ${esc(protocol?.name || "")} v${esc(protocol?.version || "")}</p>
+      <p><strong>Protocol:</strong> ${esc(protocol?.name || "")} v${esc(protocolVersion?.version || check.protocolVersion || protocol?.version || "")}</p>
       <p><strong>Bron:</strong> ${esc(source?.title || "")} — v${esc(sourceVersion?.version || "")}</p>
       <p class="muted">Status: ${esc(check.status)}</p>
       ${renderReviewSection(check)}
