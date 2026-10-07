@@ -110,3 +110,7 @@ form input,form textarea,form select { display:block; width:100%; margin-top:6px
 .source-card[open] > .source-summary::before { transform:rotate(90deg); }
 .source-card[open] > :not(summary) { margin-left:10px; margin-right:10px; }
 .source-card[open] > .source-versions { margin-left:18px; }
+
+/* Keep each task's source list on its own row. */
+.source-list { display:block; width:100%; clear:both; }
+.source-card { display:block; width:100%; }
