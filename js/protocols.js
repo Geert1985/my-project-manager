@@ -111,6 +111,27 @@ function createProtocolVersion({ protocolId, version, description = "", copyFrom
   return newVersion;
 }
 
+function activateProtocolVersion(protocolVersionId) {
+  const version = getProtocolVersion(protocolVersionId);
+  if (!version) throw new Error("Protocolversie bestaat niet.");
+  if (version.status !== "draft") {
+    throw new Error("Alleen een draftversie kan worden geactiveerd.");
+  }
+
+  const protocol = getProtocol(version.protocolId);
+  if (!protocol) throw new Error("Protocol bestaat niet.");
+
+  getProtocolVersions(protocol.id).forEach(existing => {
+    if (existing.status === "active") existing.status = "retired";
+  });
+
+  version.status = "active";
+  protocol.version = version.version;
+  protocol.updatedAt = new Date().toISOString();
+  saveState();
+  return version;
+}
+
 function isProtocolVersionUsed(protocolVersionId) {
   return state.checks.some(check => check.protocolVersionId === protocolVersionId);
 }
