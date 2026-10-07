@@ -1,14 +1,19 @@
 function createProject({ name, description = "", category = "" }) {
+  if (!name || !name.trim()) {
+    throw new Error("Een projectnaam is verplicht.");
+  }
+
   const project = {
     id: crypto.randomUUID(),
-    name,
-    description,
-    category,
+    name: name.trim(),
+    description: description.trim(),
+    category: category.trim(),
     status: "active",
     priority: "normal",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
+
   state.projects.push(project);
   saveState();
   return project;
