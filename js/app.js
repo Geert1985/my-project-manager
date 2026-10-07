@@ -498,7 +498,9 @@ function renderProtocols() {
 }
 
 function renderProtocolCard(protocol) {
-  const items = getProtocolItems(protocol.id);
+  const versions = getProtocolVersions(protocol.id);
+  const activeVersion = getActiveProtocolVersion(protocol.id);
+
   return `
     <article class="card">
       <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
@@ -506,22 +508,45 @@ function renderProtocolCard(protocol) {
           <h2>${esc(protocol.name)}</h2>
           <p class="muted">${esc(protocol.description || "Geen beschrijving")}</p>
         </div>
-        <span class="badge">v${esc(protocol.version)} · ${protocol.active ? "actief" : "inactief"}</span>
+        <span class="badge">${protocol.active ? "actief" : "inactief"}</span>
       </div>
+
       <div class="protocol-items">
-        <h3>Controlepunten (${items.length})</h3>
-        ${items.length ? items.map(item => `
-          <div class="protocol-item">
-            <div><strong>${item.order}. ${esc(item.title)}</strong>${item.required ? ` <span class="badge">verplicht</span>` : ""}</div>
-            ${item.description ? `<div class="muted small">${esc(item.description)}</div>` : ""}
-          </div>`).join("") : `<p class="muted small">Nog geen controlepunten.</p>`}
+        <h3>Versies (${versions.length})</h3>
+        ${versions.length ? versions.map(version => {
+          const items = getProtocolItemsForVersion(version.id);
+          const used = state.checks.some(check => check.protocolVersionId === version.id);
+          const canEdit = version.status === "draft" && !used;
+
+          return `
+            <div class="protocol-version-card">
+              <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+                <div>
+                  <strong>v${esc(version.version)}</strong>
+                  <span class="badge">${esc(version.status)}</span>
+                  ${used ? ` <span class="badge">in gebruik</span>` : ""}
+                </div>
+                <span class="muted small">${items.length} controlepunt${items.length === 1 ? "" : "en"}</span>
+              </div>
+              ${version.description ? `<div class="muted small" style="margin-top:4px">${esc(version.description)}</div>` : ""}
+              <div class="protocol-version-items">
+                ${items.length ? items.map(item => `
+                  <div class="protocol-item">
+                    <div><strong>${item.order}. ${esc(item.title)}</strong>${item.required ? ` <span class="badge">verplicht</span>` : ""}</div>
+                    ${item.description ? `<div class="muted small">${esc(item.description)}</div>` : ""}
+                  </div>`).join("") : `<p class="muted small">Nog geen controlepunten.</p>`}
+              </div>
+              ${canEdit ? `
+                <div class="task-actions">
+                  <button class="secondary" onclick="openProtocolItemDialog('${protocol.id}', '${version.id}')">＋ Controlepunt</button>
+                </div>` : ""}
+            </div>`;
+        }).join("") : `<p class="muted small">Nog geen protocolversies.</p>`}
       </div>
-      <div class="task-actions">
-        <button class="secondary" onclick="openProtocolItemDialog('${protocol.id}')">＋ Controlepunt</button>
-      </div>
+
+      ${activeVersion ? `<p class="muted small">Actieve versie: v${esc(activeVersion.version)}</p>` : ""}
     </article>`;
 }
-
 function openProtocolDialog() {
   document.getElementById("protocolForm").reset();
   document.getElementById("protocolVersion").value = "1.0";
