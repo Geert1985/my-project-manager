@@ -518,20 +518,27 @@ function renderProtocols() {
 }
 
 function renderProtocolCard(protocol) {
-  const versions = getProtocolVersions(protocol.id);
+  const versions = [...getProtocolVersions(protocol.id)].reverse();
   const activeVersion = getActiveProtocolVersion(protocol.id);
 
   return `
-    <article class="card">
-      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
-        <div>
-          <h2>${esc(protocol.name)}</h2>
-          <p class="muted">${esc(protocol.description || "Geen beschrijving")}</p>
-        </div>
+    <article class="card protocol-card">
+      <div class="protocol-card-header">
+        <button class="protocol-toggle" type="button" aria-expanded="false" onclick="toggleProtocolCard(this)">
+          <span class="protocol-toggle-icon" aria-hidden="true">▶</span>
+          <span>
+            <strong class="protocol-card-title">${esc(protocol.name)}</strong>
+            <span class="muted small protocol-card-summary">
+              ${activeVersion ? `Actieve versie: v${esc(activeVersion.version)} · ` : ""}${versions.length} versie${versions.length === 1 ? "" : "s"}
+            </span>
+          </span>
+        </button>
         <span class="badge">${protocol.active ? "actief" : "inactief"}</span>
       </div>
 
-      <div class="protocol-items">
+      <div class="protocol-card-body" hidden>
+        <p class="muted">${esc(protocol.description || "Geen beschrijving")}</p>
+        <div class="protocol-items">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
           <h3>Versies (${versions.length})</h3>
           <button class="secondary small" onclick="openProtocolVersionDialog('${protocol.id}')">＋ Nieuwe versie</button>
@@ -566,11 +573,23 @@ function renderProtocolCard(protocol) {
                 </div>` : ""}
             </div>`;
         }).join("") : `<p class="muted small">Nog geen protocolversies.</p>`}
-      </div>
+        </div>
 
-      ${activeVersion ? `<p class="muted small">Actieve versie: v${esc(activeVersion.version)}</p>` : ""}
+        ${activeVersion ? `<p class="muted small">Actieve versie: v${esc(activeVersion.version)}</p>` : ""}
+      </div>
     </article>`;
 }
+
+function toggleProtocolCard(button) {
+  const card = button.closest(".protocol-card");
+  const body = card?.querySelector(".protocol-card-body");
+  if (!body) return;
+
+  const expanded = button.getAttribute("aria-expanded") === "true";
+  button.setAttribute("aria-expanded", String(!expanded));
+  body.hidden = expanded;
+}
+
 function activateProtocolVersionFromUi(protocolVersionId) {
   const version = getProtocolVersion(protocolVersionId);
   if (!version) return;
