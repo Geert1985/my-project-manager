@@ -282,6 +282,7 @@ function renderTaskSources(sources) {
       ${source.author ? `<div class="muted small">Auteur: ${esc(source.author)}</div>` : ""}
       <div class="source-actions">
         <button class="secondary small" onclick="openSourceVersionDialog('${source.id}')">＋ Versie</button>
+        <button class="secondary small" onclick="removeSource('${source.id}')" title="Bron verwijderen">🗑 Verwijder bron</button>
         ${versions.length ? `<span class="muted small">${versions.length} versie${versions.length === 1 ? "" : "s"}</span>` : `<span class="muted small">Geen versies</span>`}
       </div>
       ${versions.length ? `<div class="source-versions">${versions.map(v => {
@@ -299,6 +300,24 @@ function renderTaskSources(sources) {
     </details>`;
   }).join("")}</div>`;
 }
+
+function removeSource(sourceId) {
+  const deletion = getSourceDeletionState(sourceId);
+  if (!deletion.allowed) {
+    alert(deletion.reason);
+    return;
+  }
+
+  if (confirm("Deze bron en alle bronversies verwijderen?")) {
+    try {
+      deleteSource(sourceId);
+      render();
+    } catch (error) {
+      alert(error.message);
+    }
+  }
+}
+
 function openCheckDialog(taskId, selectedSourceVersionId = null) {
   const task = state.tasks.find(item => item.id === taskId);
   if (!task) return;
