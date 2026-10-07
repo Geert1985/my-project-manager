@@ -4,12 +4,14 @@ let currentProjectId = null;
 let currentCheckId = null;
 const collapsedTaskIds = new Set();
 let dialogReturnFocusKey = null;
+let editingSourceId = null;
 
 function esc(value = "") {
   return String(value).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;" }[c]));
 }
 
 function render() {
+  if (typeof closeTaskMenu === "function") closeTaskMenu(true);
   const focusKey = document.activeElement?.getAttribute("data-focus-key") || dialogReturnFocusKey;
   const openSourceIds = new Set([...app.querySelectorAll("details[data-source-id][open]")]
     .map(element => element.getAttribute("data-source-id")));
@@ -29,11 +31,14 @@ function render() {
 
 function restoreAppFocus(key) {
   if (!key) return;
+  const focusKeys = [key];
+  if (key.startsWith("add-task-")) focusKeys.push(key.replace("add-task-", "add-child-bottom-"));
   const target = [...app.querySelectorAll("[data-focus-key]")]
-    .find(element => element.getAttribute("data-focus-key") === key);
-  const fallback = [...app.querySelectorAll("button, input, [tabindex]")]
-    .find(element => element.getClientRects().length);
-  (target?.getClientRects().length ? target : fallback)?.focus({ preventScroll: true });
+    .find(element => focusKeys.includes(element.getAttribute("data-focus-key")));
+  const fallback = target?.closest(".task-row")?.querySelector("input[type=checkbox]")
+    || [...app.querySelectorAll("button, input, [tabindex]")]
+      .find(element => !element.disabled && element.getClientRects().length);
+  (target && !target.disabled && target.getClientRects().length ? target : fallback)?.focus({ preventScroll: true });
 }
 
 function rememberDialogFocus() {
@@ -46,10 +51,11 @@ function renderDashboard() {
     app.innerHTML = `<div class="card empty">
       <h2>Welkom</h2><p>Maak je eerste project aan.</p>
       <button class="primary" onclick="openProjectDialog()">＋ Nieuw project</button>
+      <button class="secondary" onclick="chooseProjectImport()">Project importeren</button>
     </div>`;
     return;
   }
-  app.innerHTML = `<div class="card"><h2>Mijn projecten</h2><p class="muted">Projecten, taken, bronnen en voortgang op één plaats.</p></div>` +
+  app.innerHTML = `<div class="card"><h2>Mijn projecten</h2><p class="muted">Projecten, taken, bronnen en voortgang op één plaats.</p><button class="secondary" onclick="chooseProjectImport()">Project importeren</button></div>` +
     state.projects.map(projectCard).join("");
 }
 
@@ -64,6 +70,7 @@ function projectCard(project) {
     <p class="muted small">${sourceCount} bron${sourceCount === 1 ? "" : "nen"}</p>
     <div class="task-actions">
       <button class="primary" onclick="openProject('${project.id}')">Open project</button>
+      <button class="secondary" onclick="downloadProject('${project.id}')">Project exporteren</button>
       <button class="secondary" onclick="removeProject('${project.id}')">Verwijder</button>
     </div>
   </article>`;
@@ -82,6 +89,7 @@ function renderProject() {
   app.innerHTML = `<div class="card">
     <button class="secondary" onclick="goHome()">← Terug</button>
     <h2 style="margin-top:12px">${esc(project.name)}</h2>
+    <button class="secondary" onclick="downloadProject('${project.id}')">Project exporteren</button>
     <p class="muted">${esc(project.description || "")}</p>
     <div class="project-meta"><span>${stats.completed} / ${stats.total} taken</span><strong>${stats.percent}%</strong></div>
     <div class="progress"><div style="width:${stats.percent}%"></div></div>
@@ -92,21 +100,23 @@ function renderProject() {
       <button class="primary" onclick="openTaskDialog('${project.id}', null)">＋ Taak</button>
     </div>
     <div>${renderTaskTree(project.id, null)}</div>
+    <div class="task-list-footer"><button class="secondary" type="button" data-focus-key="add-root-bottom-${project.id}" onclick="openTaskDialog('${project.id}', null)">＋ Taak toevoegen</button></div>
   </div>`;
 }
 
 function renderTaskTree(projectId, parentId) {
-  const tasks = getProjectTasks(projectId).filter(t => t.parentId === parentId);
+  const tasks = getSiblingTasks(projectId, parentId);
   if (!tasks.length) return `<p class="muted small">Nog geen taken.</p>`;
 
-  return tasks.map(task => {
+  return tasks.map((task, index) => {
     const children = getChildren(task.id);
     const sources = getTaskSources(task.id);
     const hasDetails = Boolean(task.description || sources.length || children.length);
     return `<div class="task-row task-status-${task.status}">
       <input type="checkbox" data-focus-key="task-${task.id}" aria-label="${esc(task.name)} voltooien" ${task.status === "completed" ? "checked" : ""} onchange="toggleTask('${task.id}', this.checked)">
       <div class="task-content">
-        <div class="task-header">
+        <div class="task-header" data-task-header="${task.id}">
+          <button class="task-action-icon task-drag-handle" type="button" data-focus-key="drag-${task.id}" data-task-id="${task.id}" ${tasks.length < 2 ? "disabled" : ""} title="Sleep om de volgorde te wijzigen" aria-label="${esc(task.name)} slepen; gebruik het actiemenu voor toetsenbordbediening" onpointerdown="startTaskDrag(this, event)" onpointermove="updateTaskDrag(event)" onpointerup="finishTaskDrag(event)" onpointercancel="cancelTaskDrag()" onlostpointercapture="cancelTaskDrag()">⠿</button>
           ${hasDetails ? `<button class="task-toggle" type="button" data-task-id="${task.id}" data-focus-key="collapse-${task.id}" aria-expanded="${!collapsedTaskIds.has(task.id)}" onclick="toggleTaskDetails(this)" title="Taak in- of uitklappen"><span aria-hidden="true">▶</span></button>` : `<span class="task-toggle-placeholder" aria-hidden="true"></span>`}
           <div class="task-name">
             <strong class="${task.status === "completed" ? "completed" : ""}">${esc(task.name)}</strong>
@@ -115,15 +125,20 @@ function renderTaskTree(projectId, parentId) {
             ${sources.length ? `<span class="muted small">${sources.length} bron${sources.length === 1 ? "" : "nen"}</span>` : ""}
           </div>
           <div class="task-actions task-actions-compact" aria-label="Taakacties">
-            <button class="task-action-icon" type="button" data-focus-key="add-task-${task.id}" onclick="openTaskDialog('${projectId}', '${task.id}')" title="Subtaak toevoegen" aria-label="Subtaak toevoegen">＋</button>
-            <button class="task-action-icon" type="button" data-focus-key="add-source-${task.id}" onclick="openSourceDialog('${projectId}', '${task.id}')" title="Bron toevoegen" aria-label="Bron toevoegen">🔗</button>
-            <button class="task-action-icon task-action-delete" type="button" data-focus-key="delete-task-${task.id}" onclick="removeTask('${task.id}')" title="Taak verwijderen" aria-label="Taak verwijderen">🗑</button>
+            ${!children.length ? `<button class="task-action-icon" type="button" data-focus-key="add-task-${task.id}" onclick="openTaskDialog('${projectId}', '${task.id}')" title="Eerste subtaak toevoegen" aria-label="Eerste subtaak toevoegen">＋</button>` : ""}
+            <button class="task-action-icon" type="button" id="task-menu-button-${task.id}" data-focus-key="menu-${task.id}" aria-haspopup="menu" aria-expanded="false" aria-controls="task-menu-${task.id}" onclick="toggleTaskMenu(this)" onkeydown="taskMenuTriggerKey(this, event)" title="Taakacties" aria-label="Acties voor ${esc(task.name)}">⋮</button>
+            <div class="task-menu" id="task-menu-${task.id}" role="menu" aria-labelledby="task-menu-button-${task.id}" data-task-id="${task.id}" data-project-id="${projectId}" hidden>
+              <button type="button" role="menuitem" tabindex="-1" data-focus-key="add-source-${task.id}" onclick="runTaskMenuAction(this, 'source')">Bron toevoegen</button>
+              <button type="button" role="menuitem" tabindex="-1" data-focus-key="move-up-${task.id}" ${index === 0 ? "disabled" : ""} onclick="runTaskMenuAction(this, 'up')">Omhoog</button>
+              <button type="button" role="menuitem" tabindex="-1" data-focus-key="move-down-${task.id}" ${index === tasks.length - 1 ? "disabled" : ""} onclick="runTaskMenuAction(this, 'down')">Omlaag</button>
+              <button type="button" role="menuitem" tabindex="-1" class="task-menu-delete" data-focus-key="delete-task-${task.id}" onclick="runTaskMenuAction(this, 'delete')">Taak verwijderen</button>
+            </div>
           </div>
         </div>
         <div class="task-details" ${collapsedTaskIds.has(task.id) ? "hidden" : ""}>
           ${task.description ? `<div class="muted small">${esc(task.description)}</div>` : ""}
           ${sources.length ? renderTaskSources(sources) : ""}
-          ${children.length ? `<div class="children">${renderTaskTree(projectId, task.id)}</div>` : ""}
+          ${children.length ? `<div class="children">${renderTaskTree(projectId, task.id)}<div class="task-list-footer"><button class="secondary" type="button" data-focus-key="add-child-bottom-${task.id}" onclick="openTaskDialog('${projectId}', '${task.id}')">＋ Subtaak toevoegen</button></div></div>` : ""}
         </div>
       </div>
     </div>`;
@@ -275,16 +290,15 @@ function renderSourceVersion() {
   const checks = state.checks.filter(check => check.sourceVersionId === sourceVersion.id);
 
   app.innerHTML = `
-    <div class="card">
+    <div class="card source-information">
       <button class="secondary" onclick="currentView='controls'; render()">← Terug naar controles</button>
       <h2 style="margin-top:12px">${esc(source.title)}</h2>
       <p><strong>Bronversie:</strong> v${esc(sourceVersion.version)}${sourceVersion.label ? ` — ${esc(sourceVersion.label)}` : ""}</p>
-      <p class="muted">${esc(source.description || "Geen beschrijving")}</p>
-      ${source.author ? `<p><strong>Auteur:</strong> ${esc(source.author)}</p>` : ""}
-      ${source.publisher ? `<p><strong>Uitgever:</strong> ${esc(source.publisher)}</p>` : ""}
-      ${sourceVersion.fileName ? `<p><strong>Bestand:</strong> ${esc(sourceVersion.fileName)}</p>` : ""}
-      ${sourceVersion.filePath ? `<p><strong>Pad:</strong> ${esc(sourceVersion.filePath)}</p>` : ""}
-      ${sourceVersion.url || source.url ? `<p><strong>URL:</strong> <a href="${esc(sourceVersion.url || source.url)}" target="_blank" rel="noopener">Open bron</a></p>` : ""}
+      ${renderSourceText("Beschrijving (bronmetadata)", source.description)}
+      ${renderSourceText("Auteur", source.author)}
+      ${renderSourceText("Uitgever", source.publisher)}
+      ${renderSourceVersionMetadata(sourceVersion)}
+      ${!sourceVersion.url ? renderSourceLink("URL van de bron", source.url) : ""}
       ${project ? `<p class="muted small">Project: ${esc(project.name)}${task ? ` · Taak: ${esc(task.name)}` : ""}</p>` : ""}
     </div>
     <div class="card">
@@ -297,14 +311,37 @@ function renderSourceVersion() {
     </div>`;
 }
 
+function renderSourceText(label, value) {
+  if (!value || !String(value).trim()) return "";
+  return `<div class="source-metadata"><strong>${esc(label)}</strong><div class="source-text">${esc(value)}</div></div>`;
+}
+
+function renderSourceLink(label, value) {
+  if (!value || !String(value).trim()) return "";
+  let clickable = false;
+  try { clickable = ["http:", "https:"].includes(new URL(value).protocol); } catch {}
+  return `<div class="source-metadata"><strong>${esc(label)}</strong><div class="source-text">${esc(value)}</div>
+    ${clickable ? `<a class="source-open-link" href="${esc(value)}" target="_blank" rel="noopener noreferrer">Open link</a>` : ""}</div>`;
+}
+
+function renderSourceVersionMetadata(version) {
+  return renderSourceText("Bestandsnaam", version.fileName) + renderSourceText("Bestandspad", version.filePath)
+    + renderSourceText("Notities", version.notes) + renderSourceText("Contenthash", version.contentHash)
+    + renderSourceLink("URL van deze versie", version.url);
+}
+
 function renderTaskSources(sources) {
   return `<div class="source-list">${sources.map(source => {
     const versions = [...getSourceVersions(source.id)].reverse();
-    return `<details class="source-item source-card" data-source-id="${source.id}">\n      <summary class="source-summary"><strong>Bron:</strong> ${esc(source.title)} <span class="badge">${esc(source.type)}</span> <span class="muted small">· ${versions.length} versie${versions.length === 1 ? "" : "s"}</span></summary>
+    return `<details class="source-item source-card" data-source-id="${source.id}">\n      <summary class="source-summary"><strong>Bron:</strong> <span class="source-summary-title">${esc(source.title)}</span> <span class="badge">${esc(source.type)}</span> <span class="muted small">· ${versions.length} versie${versions.length === 1 ? "" : "s"}</span></summary>
       <div><strong>Bron:</strong> ${esc(source.title)} <span class="badge">${esc(source.type)}</span></div>
       ${source.author ? `<div class="muted small">Auteur: ${esc(source.author)}</div>` : ""}
+      ${renderSourceText("Uitgever", source.publisher)}
+      ${renderSourceText("Beschrijving", source.description)}
+      ${renderSourceLink("URL van de bron", source.url)}
       <div class="source-actions">
         <button class="secondary small" data-focus-key="add-version-${source.id}" onclick="openSourceVersionDialog('${source.id}')">＋ Versie</button>
+        <button class="secondary small" data-focus-key="edit-source-${source.id}" onclick="openSourceEditDialog('${source.id}')">Bron bewerken</button>
         <button class="secondary small" data-focus-key="delete-source-${source.id}" onclick="removeSource('${source.id}')" title="Bron verwijderen">🗑 Verwijder bron</button>
         ${versions.length ? `<span class="muted small">${versions.length} versie${versions.length === 1 ? "" : "s"}</span>` : `<span class="muted small">Geen versies</span>`}
       </div>
@@ -314,11 +351,11 @@ function renderTaskSources(sources) {
           .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
         const latestCheck = checks[0] || null;
         const status = latestCheck ? getCheckDisplayState(latestCheck) : null;
-        return `<div class="source-version-row">
+        return `<div class="source-version-entry"><div class="source-version-row">
           <span class="muted small">v${esc(v.version)}${v.label ? ` — ${esc(v.label)}` : ""}</span>
           ${status ? `<span class="check-status-dot status-dot-${status.key}" title="${esc(status.label)}" aria-label="${esc(status.label)}"></span>` : `<span class="check-status-dot status-dot-none" title="Nog niet gecontroleerd" aria-label="Nog niet gecontroleerd"></span>`}
           <button class="secondary small" onclick="openCheckDialog('${source.taskId}', '${v.id}')">＋ Controle</button>
-        </div>`;
+        </div>${renderSourceVersionMetadata(v)}<button class="secondary small" onclick="openSourceVersion('${v.id}')">Bekijk versie</button></div>`;
       }).join("")}</div>` : ""}
     </details>`;
   }).join("")}</div>`;
@@ -549,7 +586,8 @@ function returnFromCheck() {
 }
 
 function renderAllTasks() {
-  const open = state.tasks.filter(t => t.status !== "completed");
+  const open = state.projects.flatMap(project => getProjectTasksInTreeOrder(project.id))
+    .filter(task => task.status !== "completed");
   app.innerHTML = `<div class="card"><h2>Alle openstaande taken</h2>
     ${open.length ? open.map(t => `<div class="task-row">
       <input type="checkbox" data-focus-key="task-${t.id}" aria-label="${esc(t.name)} voltooien" onchange="toggleTask('${t.id}', this.checked)">
@@ -750,6 +788,14 @@ function toggleTask(id, checked) {
   render();
 }
 
+function moveTaskFromUi(id, direction) {
+  try {
+    if (moveTask(id, direction)) render();
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
 function removeTask(id) {
   if (confirm("Deze taak en eventuele subtaken verwijderen?")) {
     try {
@@ -827,14 +873,39 @@ function openSourceDialog(projectId, taskId) {
   rememberDialogFocus();
   currentProjectId = projectId;
   document.getElementById("sourceForm").reset();
+  editingSourceId = null;
+  document.getElementById("sourceDialogTitle").textContent = "Nieuwe bron";
+  document.getElementById("sourceSubmitButton").textContent = "Bron toevoegen";
+  document.getElementById("sourceUrl").disabled = false;
+  document.getElementById("sourceEditNote").hidden = true;
   document.getElementById("sourceTaskId").value = taskId;
   document.getElementById("sourceDialog").showModal();
+}
+
+function openSourceEditDialog(sourceId) {
+  const source = getSource(sourceId);
+  if (!source) return;
+  openSourceDialog(source.projectId, source.taskId);
+  editingSourceId = sourceId;
+  document.getElementById("sourceDialogTitle").textContent = "Bron bewerken";
+  document.getElementById("sourceSubmitButton").textContent = "Opslaan";
+  for (const [id, field] of Object.entries({sourceTitle:"title", sourceType:"type", sourceAuthor:"author",
+    sourcePublisher:"publisher", sourceUrl:"url", sourceDescription:"description"})) {
+    document.getElementById(id).value = source[field] || "";
+  }
+  const locked = !getSourceDeletionState(sourceId).allowed;
+  document.getElementById("sourceUrl").disabled = locked;
+  const note = document.getElementById("sourceEditNote");
+  note.hidden = false;
+  note.textContent = "Je bewerkt bronmetadata; bestaande bronversies blijven ongewijzigd." +
+    (locked ? " De bron-URL is beschermd door gekoppelde controles. Gebruik een nieuwe bronversie voor een andere link." : "");
+  document.getElementById("sourceTitle").focus();
 }
 
 document.getElementById("sourceForm").addEventListener("submit", event => {
   event.preventDefault();
   try {
-    createSource({
+    const metadata = {
       projectId: currentProjectId,
       taskId: document.getElementById("sourceTaskId").value || null,
       type: document.getElementById("sourceType").value,
@@ -843,7 +914,9 @@ document.getElementById("sourceForm").addEventListener("submit", event => {
       publisher: document.getElementById("sourcePublisher").value,
       url: document.getElementById("sourceUrl").value,
       description: document.getElementById("sourceDescription").value
-    });
+    };
+    if (editingSourceId) updateSourceMetadata(editingSourceId, metadata);
+    else createSource(metadata);
     document.getElementById("sourceDialog").close();
     render();
   } catch (error) {

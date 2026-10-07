@@ -1,7 +1,7 @@
 const STORAGE_KEY = "my-project-manager-v0.1";
 
 const defaultState = {
-  schemaVersion: 4,
+  schemaVersion: 5,
   projects: [],
   tasks: [],
   sources: [],
@@ -81,6 +81,17 @@ function normalizeState(raw) {
     normalized.schemaVersion = 4;
   }
 
+  // v0.7: preserve the existing array order within each project/parent group.
+  if ((normalized.schemaVersion || 1) < 5) {
+    const nextOrder = new Map();
+    for (const task of normalized.tasks) {
+      const key = JSON.stringify([task.projectId, task.parentId || null]);
+      task.sortOrder = nextOrder.get(key) || 0;
+      nextOrder.set(key, task.sortOrder + 1);
+    }
+    normalized.schemaVersion = 5;
+  }
+
   return normalized;
 }
 
@@ -88,7 +99,7 @@ function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     const loaded = raw ? normalizeState(JSON.parse(raw)) : structuredClone(defaultState);
-    if (raw && loaded.schemaVersion === 4) {
+    if (raw && loaded.schemaVersion === 5) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded));
     }
     return loaded;

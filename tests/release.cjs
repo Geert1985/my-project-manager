@@ -1,8 +1,8 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert'),path=require('path');
 const root=path.join(__dirname,'..');
 const el={innerHTML:'',addEventListener(){},querySelectorAll(){return []},querySelector(){return null}};
-const ctx=vm.createContext({console,crypto:require('crypto').webcrypto,structuredClone,localStorage:{getItem(){return null},setItem(){}},document:{getElementById(){return el},querySelectorAll(){return []}},window:{}});
-for(const f of ['storage','tasks','projects','sources','protocols','checks','reviews','app']){new vm.Script(fs.readFileSync(path.join(root,'js',f+'.js'),'utf8'),{filename:f}).runInContext(ctx)}
+const ctx=vm.createContext({console,crypto:require('crypto').webcrypto,structuredClone,localStorage:{getItem(){return null},setItem(){}},document:{getElementById(){return el},querySelectorAll(){return []},addEventListener(){}},window:{addEventListener(){}}});
+for(const f of ['storage','tasks','projects','sources','protocols','checks','reviews','interchange','app','task-drag','task-menu','interchange-ui']){new vm.Script(fs.readFileSync(path.join(root,'js',f+'.js'),'utf8'),{filename:f}).runInContext(ctx)}
 const run=s=>vm.runInContext(s,ctx);let passed=0;
 function test(name,s){try{assert.equal(run(s),true);console.log('PASS '+name);passed++}catch(e){console.log('FAIL '+name+': '+e.message);process.exitCode=1}}
 run(`var p=createProject({name:'P'});var a=createTask({projectId:p.id,name:'A'});var b=createTask({projectId:p.id,parentId:a.id,name:'B'});var c=createTask({projectId:p.id,parentId:a.id,name:'C'});`);
@@ -30,7 +30,7 @@ test('historical version copy and activation',`var pv2=createProtocolVersion({pr
 test('review immutable',`updateCheckResult({checkResultId:getCheckResults(ch.id)[0].id,status:'pass'});var rev=createReview({checkId:ch.id,reviewer:'R'});updateReviewStatus({reviewId:rev.id,status:'approved'});try{updateReviewStatus({reviewId:rev.id,status:'rejected'});false}catch{true}`);
 test('dashboard states',`getCheckDisplayState(ch).key==='approved'&&getCheckDisplayState({id:'f',status:'failed'}).key==='failed'&&getCheckDisplayState({id:'p',status:'passed'}).key==='completed'`);
 test('filter toggle',`setControlFilter('approved');var ok=activeControlFilter==='approved';setControlFilter('approved');ok&&activeControlFilter===null`);
-test('migration preserves and is idempotent',`var old={schemaVersion:3,protocols:[{id:'old',version:'1'}],protocolItems:[{id:'i',protocolId:'old'}],checks:[{id:'c',protocolId:'old'}],reviews:[{id:'r',checkId:'c'}],checkResults:[{id:'cr',checkId:'c'}]};var migrated=normalizeState(old);var once=JSON.stringify(migrated);normalizeState(migrated);JSON.stringify(migrated)===once&&migrated.schemaVersion===4&&migrated.checks[0].protocolVersionId===migrated.protocolItems[0].protocolVersionId&&migrated.reviews.length===1&&migrated.checkResults.length===1`);
+test('migration preserves and is idempotent',`var old={schemaVersion:3,protocols:[{id:'old',version:'1'}],protocolItems:[{id:'i',protocolId:'old'}],checks:[{id:'c',protocolId:'old'}],reviews:[{id:'r',checkId:'c'}],checkResults:[{id:'cr',checkId:'c'}]};var migrated=normalizeState(old);var once=JSON.stringify(migrated);normalizeState(migrated);JSON.stringify(migrated)===once&&migrated.schemaVersion===5&&migrated.checks[0].protocolVersionId===migrated.protocolItems[0].protocolVersionId&&migrated.reviews.length===1&&migrated.checkResults.length===1`);
 test('task deletion historical integrity',`var before=JSON.stringify(state);try{deleteTask(a.id);false}catch{JSON.stringify(state)===before}`);
 test('project deletion historical integrity',`var before=JSON.stringify(state);try{deleteProject(p.id);false}catch{JSON.stringify(state)===before}`);
 
