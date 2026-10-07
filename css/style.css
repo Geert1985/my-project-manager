@@ -51,3 +51,5 @@ form input,form textarea,form select { display:block; width:100%; margin-top:6px
 
 .check-result { padding:12px 0; border-top:1px solid #f0f0f0; }
 .check-result select { margin-top:8px; max-width:260px; }
+
+.review-box { margin-top:16px; padding-top:12px; border-top:1px solid #e5e7eb; }
