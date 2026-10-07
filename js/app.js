@@ -79,7 +79,7 @@ function renderTaskTree(projectId, parentId) {
   return tasks.map(task => {
     const children = getChildren(task.id);
     const sources = getTaskSources(task.id);
-    return `<div class="task-row">
+    return `<div class="task-row task-status-${task.status}">
       <input type="checkbox" ${task.status === "completed" ? "checked" : ""} onchange="toggleTask('${task.id}', this.checked)">
       <div class="task-content">
         <div class="task-name ${task.status === "completed" ? "completed" : ""}">
