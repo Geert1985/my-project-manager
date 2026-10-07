@@ -123,9 +123,6 @@ function createProtocolItem({ protocolId, protocolVersionId = null, title, descr
   if (!version || version.protocolId !== protocolId) {
     throw new Error("De protocolversie bestaat niet binnen dit protocol.");
   }
-  if (version.status !== "draft") {
-    throw new Error("Alleen controlepunten van een draft-versie kunnen worden aangepast.");
-  }
   if (state.checks.some(check => check.protocolVersionId === version.id)) {
     throw new Error("Deze protocolversie is al in gebruik en kan niet meer worden aangepast.");
   }
