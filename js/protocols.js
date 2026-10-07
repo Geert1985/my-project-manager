@@ -111,6 +111,30 @@ function createProtocolVersion({ protocolId, version, description = "", copyFrom
   return newVersion;
 }
 
+function isProtocolVersionUsed(protocolVersionId) {
+  return state.checks.some(check => check.protocolVersionId === protocolVersionId);
+}
+
+function assertProtocolVersionMutable(protocolVersionId) {
+  const version = getProtocolVersion(protocolVersionId);
+  if (!version) throw new Error("Protocolversie bestaat niet.");
+  if (isProtocolVersionUsed(protocolVersionId)) {
+    throw new Error("Deze protocolversie is al in gebruik en is historisch vergrendeld.");
+  }
+  return version;
+}
+
+function deleteProtocolVersion(protocolVersionId) {
+  const version = assertProtocolVersionMutable(protocolVersionId);
+  state.protocolItems = state.protocolItems.filter(item => item.protocolVersionId !== protocolVersionId);
+  state.protocolVersions = state.protocolVersions.filter(item => item.id !== protocolVersionId);
+
+  const protocol = getProtocol(version.protocolId);
+  if (protocol) protocol.updatedAt = new Date().toISOString();
+
+  saveState();
+}
+
 function createProtocolItem({ protocolId, protocolVersionId = null, title, description = "", required = true }) {
   const protocol = getProtocol(protocolId);
   if (!protocol) throw new Error("Protocol bestaat niet.");
@@ -123,9 +147,7 @@ function createProtocolItem({ protocolId, protocolVersionId = null, title, descr
   if (!version || version.protocolId !== protocolId) {
     throw new Error("De protocolversie bestaat niet binnen dit protocol.");
   }
-  if (state.checks.some(check => check.protocolVersionId === version.id)) {
-    throw new Error("Deze protocolversie is al in gebruik en kan niet meer worden aangepast.");
-  }
+  assertProtocolVersionMutable(version.id);
 
   const items = getProtocolItemsForVersion(version.id);
   const nextOrder = items.length ? Math.max(...items.map(item => item.order)) + 1 : 1;
@@ -149,6 +171,17 @@ function createProtocolItem({ protocolId, protocolVersionId = null, title, descr
 }
 
 function deleteProtocolItem(protocolItemId) {
-  state.protocolItems = state.protocolItems.filter(item => item.id !== protocolItemId);
+  const item = state.protocolItems.find(protocolItem => protocolItem.id === protocolItemId);
+  if (!item) throw new Error("Controlepunt bestaat niet.");
+  if (!item.protocolVersionId) {
+    throw new Error("Dit historische controlepunt kan niet veilig worden gewijzigd.");
+  }
+
+  assertProtocolVersionMutable(item.protocolVersionId);
+  state.protocolItems = state.protocolItems.filter(protocolItem => protocolItem.id !== protocolItemId);
+
+  const protocol = getProtocol(item.protocolId);
+  if (protocol) protocol.updatedAt = new Date().toISOString();
+
   saveState();
 }
