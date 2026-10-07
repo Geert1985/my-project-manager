@@ -90,14 +90,14 @@ function renderTaskTree(projectId, parentId) {
             <span class="task-status-label small">${task.status === "completed" ? "Voltooid" : task.status === "in_progress" ? "Bezig" : "Niet gestart"}</span>
             ${children.length ? `<span class="muted small">${children.length} subtaak${children.length === 1 ? "" : "taken"}</span>` : ""}
           </div>
+          <div class="task-actions task-actions-compact" aria-label="Taakacties">
+            <button class="task-action-icon" type="button" onclick="openTaskDialog('${projectId}', '${task.id}')" title="Subtaak toevoegen" aria-label="Subtaak toevoegen">＋</button>
+            <button class="task-action-icon" type="button" onclick="openSourceDialog('${projectId}', '${task.id}')" title="Bron toevoegen" aria-label="Bron toevoegen">🔗</button>
+            <button class="task-action-icon task-action-delete" type="button" onclick="removeTask('${task.id}')" title="Taak verwijderen" aria-label="Taak verwijderen">🗑</button>
+          </div>
         </div>
         <div class="task-details">
           ${task.description ? `<div class="muted small">${esc(task.description)}</div>` : ""}
-          <div class="task-actions">
-            <button class="secondary small" onclick="openTaskDialog('${projectId}', '${task.id}')">＋ Subtaak</button>
-            <button class="secondary small" onclick="openSourceDialog('${projectId}', '${task.id}')">＋ Bron</button>
-            <button class="secondary small" onclick="removeTask('${task.id}')">Verwijder</button>
-          </div>
           ${sources.length ? renderTaskSources(sources) : ""}
           ${children.length ? `<div class="children">${renderTaskTree(projectId, task.id)}</div>` : ""}
         </div>
