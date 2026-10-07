@@ -2,6 +2,14 @@
 
 Een mobiele, generieke project- en checklistwebapp met controle- en reviewfunctionaliteit.
 
+## v0.4
+
+- versiebeheer voor controleprotocollen
+- draft → active → retired lifecycle
+- checks gekoppeld aan een concrete protocolversie
+- immutable gebruikte protocolversies en controlepunten
+- historische reproduceerbaarheid van controles en reviews
+
 ## v0.3
 
 - controleprotocollen en controlepunten
@@ -28,7 +36,7 @@ Voor GitHub Pages kan de repository rechtstreeks als statische website gepublice
 
 ## Versie
 
-De huidige stabiele ontwikkelversie is **0.3**. De task-statusmatrix staat in `docs/task-status-matrix.md`.
+De huidige stabiele ontwikkelversie is **0.4**. De task-statusmatrix staat in `docs/task-status-matrix.md`.
 
 ## Toekomst
 
