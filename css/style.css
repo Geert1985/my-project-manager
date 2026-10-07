@@ -77,3 +77,14 @@ form input,form textarea,form select { display:block; width:100%; margin-top:6px
 .check-summary { margin-top:6px; }
 .check-summary-row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:4px 0; }
 .check-summary-row > span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+.source-version-row { display:flex; align-items:center; gap:7px; padding:5px 0; }
+.source-version-row > .muted { flex:1; min-width:0; }
+.check-status-dot { width:10px; height:10px; min-width:10px; border-radius:50%; display:inline-block; border:1px solid rgba(0,0,0,.12); }
+.status-dot-approved { background:#22c55e; }
+.status-dot-pending { background:#f59e0b; }
+.status-dot-failed { background:#ef4444; }
+.status-dot-completed { background:#3b82f6; }
+.status-dot-progress { background:#38bdf8; }
+.status-dot-neutral { background:#9ca3af; }
+.status-dot-none { background:#d1d5db; }
