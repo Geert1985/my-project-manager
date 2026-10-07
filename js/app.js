@@ -257,29 +257,29 @@ function renderSourceVersion() {
 }
 
 function renderTaskSources(sources) {
-  return \`<div class="source-list">${sources.map(source => {
+  return `<div class="source-list">${sources.map(source => {
     const versions = getSourceVersions(source.id);
-    return \`<div class="source-item">
+    return `<div class="source-item">
       <div><strong>Bron:</strong> ${esc(source.title)} <span class="badge">${esc(source.type)}</span></div>
-      ${source.author ? \`<div class="muted small">Auteur: ${esc(source.author)}</div>\` : ""}
+      ${source.author ? `<div class="muted small">Auteur: ${esc(source.author)}</div>` : ""}
       <div class="source-actions">
         <button class="secondary small" onclick="openSourceVersionDialog('${source.id}')">＋ Versie</button>
-        ${versions.length ? \`<span class="muted small">${versions.length} versie${versions.length === 1 ? "" : "s"}</span>\` : \`<span class="muted small">Geen versies</span>\`}
+        ${versions.length ? `<span class="muted small">${versions.length} versie${versions.length === 1 ? "" : "s"}</span>` : `<span class="muted small">Geen versies</span>`}
       </div>
-      ${versions.length ? \`<div class="source-versions">${versions.map(v => {
+      ${versions.length ? `<div class="source-versions">${versions.map(v => {
         const checks = state.checks
           .filter(check => check.taskId === source.taskId && check.sourceVersionId === v.id)
           .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
         const latestCheck = checks[0] || null;
         const status = latestCheck ? getCheckDisplayState(latestCheck) : null;
-        return \`<div class="source-version-row">
-          <span class="muted small">v${esc(v.version)}${v.label ? \` — ${esc(v.label)}\` : ""}</span>
-          ${status ? \`<span class="check-status-dot status-dot-${status.key}" title="${esc(status.label)}" aria-label="${esc(status.label)}"></span>\` : \`<span class="check-status-dot status-dot-none" title="Nog niet gecontroleerd" aria-label="Nog niet gecontroleerd"></span>\`}
+        return `<div class="source-version-row">
+          <span class="muted small">v${esc(v.version)}${v.label ? ` — ${esc(v.label)}` : ""}</span>
+          ${status ? `<span class="check-status-dot status-dot-${status.key}" title="${esc(status.label)}" aria-label="${esc(status.label)}"></span>` : `<span class="check-status-dot status-dot-none" title="Nog niet gecontroleerd" aria-label="Nog niet gecontroleerd"></span>`}
           <button class="secondary small" onclick="openCheckDialog('${source.taskId}', '${v.id}')">＋ Controle</button>
-        </div>\`;
-      }).join("")}</div>\` : ""}
-    </div>\`;
-  }).join("")}</div>\`;
+        </div>`;
+      }).join("")}</div>` : ""}
+    </div>`;
+  }).join("")}</div>`;
 }
 function openCheckDialog(taskId, selectedSourceVersionId = null) {
   const task = state.tasks.find(item => item.id === taskId);
