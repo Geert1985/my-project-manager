@@ -1,4 +1,4 @@
-function createCheck({ taskId, sourceVersionId, protocolId, summary = "" }) {
+function createCheck({ taskId, sourceVersionId, protocolId, protocolVersionId, summary = "" }) {
   const task = state.tasks.find(item => item.id === taskId);
   if (!task) throw new Error("Taak bestaat niet.");
 
@@ -13,8 +13,13 @@ function createCheck({ taskId, sourceVersionId, protocolId, summary = "" }) {
   const protocol = getProtocol(protocolId);
   if (!protocol) throw new Error("Protocol bestaat niet.");
 
-  const protocolVersion = getActiveProtocolVersion(protocolId);
-  if (!protocolVersion) throw new Error("Het protocol heeft geen actieve versie.");
+  const protocolVersion = getProtocolVersion(protocolVersionId);
+  if (!protocolVersion || protocolVersion.protocolId !== protocolId) {
+    throw new Error("De gekozen protocolversie bestaat niet binnen dit protocol.");
+  }
+  if (protocolVersion.status !== "active") {
+    throw new Error("Alleen een actieve protocolversie kan voor een nieuwe controle worden gebruikt.");
+  }
 
   const check = {
     id: crypto.randomUUID(),
