@@ -787,6 +787,13 @@ document.getElementById("sourceVersionForm").addEventListener("submit", event =>
   }
 });
 
+document.querySelectorAll("[data-dialog-cancel]").forEach(button => {
+  button.addEventListener("click", () => {
+    const dialog = button.closest("dialog");
+    if (dialog?.open) dialog.close();
+  });
+});
+
 document.getElementById("newProjectBtn").addEventListener("click", openProjectDialog);
 document.querySelectorAll(".nav-btn").forEach(btn => btn.addEventListener("click", () => {
   currentView = btn.dataset.view;
