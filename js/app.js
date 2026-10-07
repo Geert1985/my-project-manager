@@ -146,6 +146,33 @@ function renderControlsDashboard() {
     <div class="card">
       <h2>Alle controles (${checks.length})</h2>
       ${checks.length ? checks.map(renderControlDashboardRow).join("") : \`<div class="empty">Nog geen controles uitgevoerd.</div>\`}
+
+    <div class="
+function renderReviewDashboardRow(review) {
+  const check = getCheck(review.checkId);
+  const task = check ? state.tasks.find(item => item.id === check.taskId) : null;
+  const sourceVersion = check ? getSourceVersion(check.sourceVersionId) : null;
+  const source = sourceVersion ? getSource(sourceVersion.sourceId) : null;
+  return \`<div class="control-row">
+    <div class="control-row-main">
+      <div>
+        <strong>Review · ${esc(review.reviewer)}</strong>
+        <div class="muted small">${esc(task?.name || "Onbekende taak")} · ${esc(source?.title || "")} v${esc(sourceVersion?.version || "")}</div>
+      </div>
+      <span class="status-chip status-${review.status === "approved" ? "approved" : review.status === "pending" ? "pending" : "failed"}">${review.status === "approved" ? "🟢 Goedgekeurd" : review.status === "pending" ? "🟠 In behandeling" : "🔴 Afgewezen"}</span>
+    </div>
+    ${review.comment ? \`<div class="control-meta muted small">${esc(review.comment)}</div>\` : ""}
+    <div class="task-actions">
+      ${check ? \`<button class="secondary small" onclick="openCheck('${check.id}')">Open controle</button>\` : ""}
+      ${sourceVersion ? \`<button class="secondary small" onclick="openSourceVersion('${sourceVersion.id}')">Bronversie</button>\` : ""}
+    </div>
+  </div>\`;
+}
+
+card">
+      <h2>Alle reviews (${state.reviews.length})</h2>
+      ${state.reviews.length ? [...state.reviews].sort((a,b) => b.createdAt.localeCompare(a.createdAt)).map(renderReviewDashboardRow).join("") : \`<div class="empty">Nog geen reviews.</div>\`}
+    </div>
     </div>\`;
 }
 
