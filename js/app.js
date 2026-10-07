@@ -519,7 +519,7 @@ function renderProtocolCard(protocol) {
         ${versions.length ? versions.map(version => {
           const items = getProtocolItemsForVersion(version.id);
           const used = state.checks.some(check => check.protocolVersionId === version.id);
-          const canEdit = version.status === "draft" && !used;
+          const canEdit = (version.status === "draft" || version.status === "active") && !used;
 
           return `
             <div class="protocol-version-card">
