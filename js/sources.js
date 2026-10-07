@@ -99,3 +99,38 @@ function getSourceVersions(sourceId) {
 function getSourceVersion(sourceVersionId) {
   return state.sourceVersions.find(version => version.id === sourceVersionId);
 }
+
+
+function assertDeletionPreservesHistory(taskIds, sourceIds) {
+  const versionIds = new Set(state.sourceVersions
+    .filter(version => sourceIds.has(version.sourceId)).map(version => version.id));
+  if (state.checks.some(check => taskIds.has(check.taskId) || versionIds.has(check.sourceVersionId))) {
+    throw new Error("Verwijderen is niet toegestaan: dit project of deze taak bevat controles. Taken, bronnen, bronversies en de historische controleketen blijven behouden.");
+  }
+}
+
+function getSourceDeletionState(sourceId) {
+  const source = getSource(sourceId);
+  if (!source) return { allowed: false, reason: "Bron bestaat niet." };
+
+  const versionIds = new Set(getSourceVersions(sourceId).map(version => version.id));
+  const linkedChecks = state.checks.filter(check => versionIds.has(check.sourceVersionId));
+
+  if (linkedChecks.length) {
+    return {
+      allowed: false,
+      reason: `Deze bron kan niet worden verwijderd omdat ${linkedChecks.length} controle${linkedChecks.length === 1 ? "" : "s"} aan een bronversie gekoppeld ${linkedChecks.length === 1 ? "is" : "zijn"}. De historische controleketen blijft behouden.`
+    };
+  }
+
+  return { allowed: true, reason: "" };
+}
+
+function deleteSource(sourceId) {
+  const deletion = getSourceDeletionState(sourceId);
+  if (!deletion.allowed) throw new Error(deletion.reason);
+
+  state.sources = state.sources.filter(source => source.id !== sourceId);
+  state.sourceVersions = state.sourceVersions.filter(version => version.sourceId !== sourceId);
+  saveState();
+}
