@@ -14,10 +14,13 @@ function createTask({ projectId, parentId = null, name, description = "", priori
 
   state.tasks.push(task);
 
-  // A newly added child may change the state of an automatically
-  // completed parent. Manual parent completion is preserved.
+  // A newly added child represents new work. A completed parent
+  // therefore becomes in_progress, regardless of how it was completed.
   if (parentId) {
     const parent = state.tasks.find(t => t.id === parentId);
+    if (parent && parent.status === "completed") {
+      updateTaskState(parent, "in_progress", "manual");
+    }
     if (parent) reconcileTaskAndAncestors(parent);
   }
 
