@@ -185,3 +185,19 @@ button:disabled { cursor:not-allowed; opacity:.55; }
   .task-header { flex-wrap:wrap; }
   .task-actions-compact { margin-left:31px; }
 }
+
+/* v0.6 control dashboard filters */
+.dashboard-filter {
+  width:100%;
+  text-align:left;
+  cursor:pointer;
+  font:inherit;
+  color:inherit;
+}
+.dashboard-filter:hover { background:#f9fafb; }
+.dashboard-filter.active {
+  outline:3px solid rgba(37,99,235,.22);
+  border-color:#2563eb;
+  background:#f8fbff;
+}
+.active-filter-note { margin-top:10px; color:#4b5563; }
