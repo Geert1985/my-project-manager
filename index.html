@@ -120,6 +120,24 @@
     </form>
   </dialog>
 
+  <dialog id="checkDialog">
+    <form method="dialog" id="checkForm">
+      <h2>Nieuwe controle</h2>
+      <input type="hidden" id="checkTaskId">
+      <label>Protocol
+        <select id="checkProtocolId" required></select>
+      </label>
+      <label>Bronversie
+        <select id="checkSourceVersionId" required></select>
+      </label>
+      <label>Samenvatting<textarea id="checkSummary" rows="3"></textarea></label>
+      <div class="dialog-actions">
+        <button value="cancel">Annuleren</button>
+        <button value="default" class="primary">Controle starten</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="protocolItemDialog">
     <form method="dialog" id="protocolItemForm">
       <h2>Nieuw controlepunt</h2>
@@ -136,6 +154,7 @@
 
   <script src="js/sources.js"></script>
   <script src="js/protocols.js"></script>
+  <script src="js/checks.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
