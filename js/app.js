@@ -12,7 +12,9 @@ function render() {
   else if (currentView === "tasks") renderAllTasks();
   else if (currentView === "project") renderProject();
   else if (currentView === "protocols") renderProtocols();
+  else if (currentView === "controls") renderControlsDashboard();
   else if (currentView === "check") renderCheck();
+  else if (currentView === "sourceVersion") renderSourceVersion();
 }
 
 function renderDashboard() {
@@ -91,11 +93,127 @@ function renderTaskTree(projectId, parentId) {
           <button class="secondary small" onclick="openCheckDialog('${task.id}')">＋ Controle</button>
           <button class="secondary small" onclick="removeTask('${task.id}')">Verwijder</button>
         </div>
+        ${renderTaskCheckSummary(task.id)}
         ${sources.length ? renderTaskSources(sources) : ""}
         ${children.length ? `<div class="children">${renderTaskTree(projectId, task.id)}</div>` : ""}
       </div>
     </div>`;
   }).join("");
+}
+
+
+function getCheckDisplayState(check) {
+  const review = getReviewForCheck(check.id);
+  if (check.status === "failed") return { key: "failed", label: "Controle mislukt", icon: "🔴" };
+  if (check.status === "passed" && review?.status === "approved") return { key: "approved", label: "Goedgekeurd", icon: "🟢" };
+  if (check.status === "passed" && review?.status === "pending") return { key: "pending", label: "Review in behandeling", icon: "🟠" };
+  if (check.status === "passed") return { key: "completed", label: "Controle uitgevoerd", icon: "🔵" };
+  if (check.status === "in_progress") return { key: "progress", label: "Controle bezig", icon: "🔵" };
+  return { key: "neutral", label: "Nog niet gestart", icon: "⚪" };
+}
+
+function renderStatusChip(check) {
+  const status = getCheckDisplayState(check);
+  return \`<span class="status-chip status-${status.key}">${status.icon} ${status.label}</span>\`;
+}
+
+function renderTaskCheckSummary(taskId) {
+  const checks = getTaskChecks(taskId);
+  if (!checks.length) return "";
+  const latest = checks[0];
+  return \`<div class="muted small" style="margin-top:6px">${checks.length} controle${checks.length === 1 ? "" : "s"} · ${renderStatusChip(latest)}</div>\`;
+}
+
+function renderControlsDashboard() {
+  const checks = [...state.checks].sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+  const counts = { approved:0, pending:0, failed:0, completed:0 };
+  checks.forEach(check => {
+    const key = getCheckDisplayState(check).key;
+    if (counts[key] !== undefined) counts[key]++;
+  });
+
+  app.innerHTML = \`
+    <div class="card">
+      <h2>Controle- en reviewdashboard</h2>
+      <p class="muted">Overzicht van alle uitgevoerde controles, reviews en hun actuele status.</p>
+      <div class="dashboard-grid">
+        <div class="dashboard-stat"><span>🟢 Goedgekeurd</span><strong>${counts.approved}</strong></div>
+        <div class="dashboard-stat"><span>🟠 Review in behandeling</span><strong>${counts.pending}</strong></div>
+        <div class="dashboard-stat"><span>🔴 Controle mislukt</span><strong>${counts.failed}</strong></div>
+        <div class="dashboard-stat"><span>🔵 Controle uitgevoerd</span><strong>${counts.completed}</strong></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Alle controles (${checks.length})</h2>
+      ${checks.length ? checks.map(renderControlDashboardRow).join("") : \`<div class="empty">Nog geen controles uitgevoerd.</div>\`}
+    </div>\`;
+}
+
+function renderControlDashboardRow(check) {
+  const task = state.tasks.find(item => item.id === check.taskId);
+  const project = task ? getProject(task.projectId) : null;
+  const protocol = getProtocol(check.protocolId);
+  const sourceVersion = getSourceVersion(check.sourceVersionId);
+  const source = sourceVersion ? getSource(sourceVersion.sourceId) : null;
+  const review = getReviewForCheck(check.id);
+
+  return \`<div class="control-row">
+    <div class="control-row-main">
+      <div>
+        <strong>${esc(task?.name || "Onbekende taak")}</strong>
+        <div class="muted small">${esc(project?.name || "")}</div>
+      </div>
+      ${renderStatusChip(check)}
+    </div>
+    <div class="control-meta muted small">
+      Protocol: ${esc(protocol?.name || "")} v${esc(check.protocolVersion || protocol?.version || "")}
+      · Bron: ${esc(source?.title || "")} v${esc(sourceVersion?.version || "")}
+      ${review ? \`· Review: ${esc(review.status)}\` : ""}
+    </div>
+    <div class="task-actions">
+      <button class="secondary small" onclick="openCheck('${check.id}')">Open controle</button>
+      ${sourceVersion ? \`<button class="secondary small" onclick="openSourceVersion('${sourceVersion.id}')">Bronversie</button>\` : ""}
+    </div>
+  </div>\`;
+}
+
+function openSourceVersion(sourceVersionId) {
+  currentView = "sourceVersion";
+  currentCheckId = null;
+  window.currentSourceVersionId = sourceVersionId;
+  render();
+}
+
+function renderSourceVersion() {
+  const sourceVersion = getSourceVersion(window.currentSourceVersionId);
+  const source = sourceVersion ? getSource(sourceVersion.sourceId) : null;
+  if (!sourceVersion || !source) { currentView = "controls"; return render(); }
+
+  const project = getProject(source.projectId);
+  const task = source.taskId ? state.tasks.find(item => item.id === source.taskId) : null;
+  const checks = state.checks.filter(check => check.sourceVersionId === sourceVersion.id);
+
+  app.innerHTML = \`
+    <div class="card">
+      <button class="secondary" onclick="currentView='controls'; render()">← Terug naar controles</button>
+      <h2 style="margin-top:12px">${esc(source.title)}</h2>
+      <p><strong>Bronversie:</strong> v${esc(sourceVersion.version)}${sourceVersion.label ? \` — ${esc(sourceVersion.label)}\` : ""}</p>
+      <p class="muted">${esc(source.description || "Geen beschrijving")}</p>
+      ${source.author ? \`<p><strong>Auteur:</strong> ${esc(source.author)}</p>\` : ""}
+      ${source.publisher ? \`<p><strong>Uitgever:</strong> ${esc(source.publisher)}</p>\` : ""}
+      ${sourceVersion.fileName ? \`<p><strong>Bestand:</strong> ${esc(sourceVersion.fileName)}</p>\` : ""}
+      ${sourceVersion.filePath ? \`<p><strong>Pad:</strong> ${esc(sourceVersion.filePath)}</p>\` : ""}
+      ${sourceVersion.url || source.url ? \`<p><strong>URL:</strong> <a href="${esc(sourceVersion.url || source.url)}" target="_blank" rel="noopener">Open bron</a></p>\` : ""}
+      ${project ? \`<p class="muted small">Project: ${esc(project.name)}${task ? \` · Taak: ${esc(task.name)}\` : ""}</p>\` : ""}
+    </div>
+    <div class="card">
+      <h3>Controles op deze bronversie (${checks.length})</h3>
+      ${checks.length ? checks.map(check => \`
+        <div class="control-row">
+          <div class="control-row-main"><strong>Controle</strong>${renderStatusChip(check)}</div>
+          <div class="task-actions"><button class="secondary small" onclick="openCheck('${check.id}')">Open controle</button></div>
+        </div>\`).join("") : \`<p class="muted">Geen controles op deze bronversie.</p>\`}
+    </div>\`;
 }
 
 function renderTaskSources(sources) {
