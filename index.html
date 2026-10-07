@@ -53,9 +53,53 @@
     </form>
   </dialog>
 
+  <dialog id="sourceDialog">
+    <form method="dialog" id="sourceForm">
+      <h2>Nieuwe bron</h2>
+      <input type="hidden" id="sourceTaskId">
+      <label>Titel<input id="sourceTitle" required maxlength="200"></label>
+      <label>Type
+        <select id="sourceType">
+          <option value="document">Document</option>
+          <option value="book">Boek</option>
+          <option value="article">Artikel</option>
+          <option value="website">Website</option>
+          <option value="github">GitHub</option>
+          <option value="other">Andere</option>
+        </select>
+      </label>
+      <label>Auteur<input id="sourceAuthor" maxlength="150"></label>
+      <label>Uitgever<input id="sourcePublisher" maxlength="150"></label>
+      <label>URL<input id="sourceUrl" type="url"></label>
+      <label>Beschrijving<textarea id="sourceDescription" rows="3"></textarea></label>
+      <div class="dialog-actions">
+        <button value="cancel">Annuleren</button>
+        <button value="default" class="primary">Bron toevoegen</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="sourceVersionDialog">
+    <form method="dialog" id="sourceVersionForm">
+      <h2>Nieuwe bronversie</h2>
+      <input type="hidden" id="sourceVersionSourceId">
+      <label>Versie<input id="sourceVersion" required maxlength="50" placeholder="Bijv. 1.0"></label>
+      <label>Label<input id="sourceVersionLabel" maxlength="150" placeholder="Bijv. Eerste gecontroleerde versie"></label>
+      <label>Bestandsnaam<input id="sourceVersionFileName" maxlength="200"></label>
+      <label>Bestandspad<input id="sourceVersionFilePath" maxlength="300"></label>
+      <label>URL<input id="sourceVersionUrl" type="url"></label>
+      <label>Notities<textarea id="sourceVersionNotes" rows="3"></textarea></label>
+      <div class="dialog-actions">
+        <button value="cancel">Annuleren</button>
+        <button value="default" class="primary">Versie toevoegen</button>
+      </div>
+    </form>
+  </dialog>
+
   <script src="js/storage.js"></script>
   <script src="js/tasks.js"></script>
   <script src="js/projects.js"></script>
+  <script src="js/sources.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
