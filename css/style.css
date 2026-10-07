@@ -154,3 +154,34 @@ button:disabled { cursor:not-allowed; opacity:.55; }
 .task-toggle-placeholder { flex:0 0 24px; width:24px; }
 .task-details { margin-top:4px; }
 .task-details[hidden] { display:none; }
+
+/* v0.6 compact task actions */
+.task-header { width:100%; }
+.task-header .task-name { flex:1 1 auto; min-width:0; }
+.task-actions-compact {
+  display:flex;
+  flex:0 0 auto;
+  gap:4px;
+  margin-left:auto;
+}
+.task-action-icon {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:30px;
+  height:30px;
+  min-height:30px;
+  padding:0;
+  border:1px solid #d1d5db;
+  border-radius:7px;
+  background:#fff;
+  color:#374151;
+  cursor:pointer;
+  line-height:1;
+}
+.task-action-icon:hover { background:#f9fafb; }
+.task-action-delete { color:#b91c1c; }
+@media (max-width:600px) {
+  .task-header { flex-wrap:wrap; }
+  .task-actions-compact { margin-left:31px; }
+}
