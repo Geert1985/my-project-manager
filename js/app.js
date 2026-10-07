@@ -562,6 +562,7 @@ function renderProtocolCard(protocol) {
               ${canEdit ? `
                 <div class="task-actions">
                   <button class="secondary" onclick="openProtocolItemDialog('${protocol.id}', '${version.id}')">＋ Controlepunt</button>
+                  ${version.status === "draft" ? `<button class="primary" onclick="activateProtocolVersionFromUi('${version.id}')">Activeren</button>` : ""}
                 </div>` : ""}
             </div>`;
         }).join("") : `<p class="muted small">Nog geen protocolversies.</p>`}
@@ -570,6 +571,22 @@ function renderProtocolCard(protocol) {
       ${activeVersion ? `<p class="muted small">Actieve versie: v${esc(activeVersion.version)}</p>` : ""}
     </article>`;
 }
+function activateProtocolVersionFromUi(protocolVersionId) {
+  const version = getProtocolVersion(protocolVersionId);
+  if (!version) return;
+
+  if (!confirm(`Protocolversie v${version.version} activeren? De huidige actieve versie wordt retired.`)) {
+    return;
+  }
+
+  try {
+    activateProtocolVersion(protocolVersionId);
+    render();
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
 function openProtocolDialog() {
   document.getElementById("protocolForm").reset();
   document.getElementById("protocolVersion").value = "1.0";
