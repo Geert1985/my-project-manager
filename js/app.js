@@ -278,7 +278,7 @@ function renderTaskSources(sources) {
           <button class="secondary small" onclick="openCheckDialog('${source.taskId}', '${v.id}')">＋ Controle</button>
         </div>`;
       }).join("")}</div>` : ""}
-    </div>`;
+    </details>`;
   }).join("")}</div>`;
 }
 function openCheckDialog(taskId, selectedSourceVersionId = null) {
