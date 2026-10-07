@@ -89,6 +89,7 @@ function renderTaskTree(projectId, parentId) {
             <strong>${esc(task.name)}</strong>
             <span class="task-status-label small">${task.status === "completed" ? "Voltooid" : task.status === "in_progress" ? "Bezig" : "Niet gestart"}</span>
             ${children.length ? `<span class="muted small">${children.length} subtaak${children.length === 1 ? "" : "taken"}</span>` : ""}
+            ${sources.length ? `<span class="muted small">${sources.length} bron${sources.length === 1 ? "" : "nen"}</span>` : ""}
           </div>
           <div class="task-actions task-actions-compact" aria-label="Taakacties">
             <button class="task-action-icon" type="button" onclick="openTaskDialog('${projectId}', '${task.id}')" title="Subtaak toevoegen" aria-label="Subtaak toevoegen">＋</button>
