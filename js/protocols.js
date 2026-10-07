@@ -13,6 +13,16 @@ function createProtocol({ name, description = "", version = "1.0", active = true
   };
 
   state.protocols.push(protocol);
+
+  state.protocolVersions.push({
+    id: crypto.randomUUID(),
+    protocolId: protocol.id,
+    version: protocol.version,
+    description: protocol.description,
+    status: "active",
+    createdAt: protocol.createdAt
+  });
+
   saveState();
   return protocol;
 }
