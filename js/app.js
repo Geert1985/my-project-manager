@@ -187,6 +187,7 @@ function renderCheck() {
       <p><strong>Protocol:</strong> ${esc(protocol?.name || "")} v${esc(protocol?.version || "")}</p>
       <p><strong>Bron:</strong> ${esc(source?.title || "")} — v${esc(sourceVersion?.version || "")}</p>
       <p class="muted">Status: ${esc(check.status)}</p>
+      ${renderReviewSection(check)}
     </div>
     <div class="card">
       <h2>Controlepunten</h2>
@@ -208,6 +209,64 @@ function renderCheck() {
       }).join("")}
     </div>
   `;
+}
+
+function renderReviewSection(check) {
+  const review = getReviewForCheck(check.id);
+
+  if (!["passed", "failed"].includes(check.status)) {
+    return `<p class="muted small">Een review kan pas worden aangemaakt nadat de controle is afgerond.</p>`;
+  }
+
+  if (!review) {
+    return `<div class="review-box">
+      <h3>Review</h3>
+      <p class="muted small">Deze controle is nog niet gereviewd.</p>
+      <button class="secondary" onclick="openReviewDialog('${check.id}')">＋ Review</button>
+    </div>`;
+  }
+
+  return `<div class="review-box">
+    <h3>Review</h3>
+    <p><strong>Status:</strong> ${esc(review.status)}</p>
+    <p><strong>Reviewer:</strong> ${esc(review.reviewer)}</p>
+    ${review.comment ? `<p class="muted small">${esc(review.comment)}</p>` : ""}
+    ${review.status === "pending" ? `
+      <div class="task-actions">
+        <button class="secondary small" onclick="setReviewStatus('${review.id}', 'approved')">Goedkeuren</button>
+        <button class="secondary small" onclick="setReviewStatus('${review.id}', 'rejected')">Afwijzen</button>
+      </div>` : ""}
+  </div>`;
+}
+
+function openReviewDialog(checkId) {
+  document.getElementById("reviewForm").reset();
+  document.getElementById("reviewCheckId").value = checkId;
+  document.getElementById("reviewDialog").showModal();
+}
+
+document.getElementById("reviewForm").addEventListener("submit", event => {
+  event.preventDefault();
+  try {
+    createReview({
+      checkId: document.getElementById("reviewCheckId").value,
+      reviewer: document.getElementById("reviewReviewer").value,
+      comment: document.getElementById("reviewComment").value
+    });
+    document.getElementById("reviewDialog").close();
+    render();
+  } catch (error) {
+    alert(error.message);
+  }
+});
+
+function setReviewStatus(reviewId, status) {
+  try {
+    updateReviewStatus({ reviewId, status });
+    render();
+  } catch (error) {
+    alert(error.message);
+  }
 }
 
 function saveCheckResult(resultId, status) {
