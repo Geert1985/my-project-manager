@@ -258,8 +258,8 @@ function renderSourceVersion() {
 
 function renderTaskSources(sources) {
   return `<div class="source-list">${sources.map(source => {
-    const versions = getSourceVersions(source.id);
-    return `<div class="source-item">
+    const versions = [...getSourceVersions(source.id)].reverse();
+    return `<details class="source-item source-card">\n      <summary class="source-summary"><strong>Bron:</strong> ${esc(source.title)} <span class="badge">${esc(source.type)}</span> <span class="muted small">· ${versions.length} versie${versions.length === 1 ? "" : "s"}</span></summary>
       <div><strong>Bron:</strong> ${esc(source.title)} <span class="badge">${esc(source.type)}</span></div>
       ${source.author ? `<div class="muted small">Auteur: ${esc(source.author)}</div>` : ""}
       <div class="source-actions">
