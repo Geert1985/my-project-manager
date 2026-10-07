@@ -10,6 +10,7 @@ function render() {
   if (currentView === "dashboard") renderDashboard();
   else if (currentView === "tasks") renderAllTasks();
   else if (currentView === "project") renderProject();
+  else if (currentView === "protocols") renderProtocols();
 }
 
 function renderDashboard() {
@@ -117,6 +118,94 @@ function renderAllTasks() {
       <div class="task-content"><strong>${esc(t.name)}</strong><div class="muted small">${esc(getProject(t.projectId)?.name || "")}</div></div>
     </div>`).join("") : `<div class="empty">Geen openstaande taken.</div>`}
   </div>`;
+}
+
+function renderProtocols() {
+  app.innerHTML = `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <div>
+          <h2>Controleprotocollen</h2>
+          <p class="muted">Herbruikbare controleprocedures voor projecten en taken.</p>
+        </div>
+        <button class="primary" onclick="openProtocolDialog()">＋ Protocol</button>
+      </div>
+    </div>
+    ${state.protocols.length ? state.protocols.map(renderProtocolCard).join("") : `
+      <div class="card empty">
+        <p>Nog geen controleprotocollen.</p>
+        <button class="primary" onclick="openProtocolDialog()">＋ Eerste protocol</button>
+      </div>`}
+  `;
+}
+
+function renderProtocolCard(protocol) {
+  const items = getProtocolItems(protocol.id);
+  return `
+    <article class="card">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+        <div>
+          <h2>${esc(protocol.name)}</h2>
+          <p class="muted">${esc(protocol.description || "Geen beschrijving")}</p>
+        </div>
+        <span class="badge">v${esc(protocol.version)} · ${protocol.active ? "actief" : "inactief"}</span>
+      </div>
+      <div class="protocol-items">
+        <h3>Controlepunten (${items.length})</h3>
+        ${items.length ? items.map(item => `
+          <div class="protocol-item">
+            <div><strong>${item.order}. ${esc(item.title)}</strong>${item.required ? ` <span class="badge">verplicht</span>` : ""}</div>
+            ${item.description ? `<div class="muted small">${esc(item.description)}</div>` : ""}
+          </div>`).join("") : `<p class="muted small">Nog geen controlepunten.</p>`}
+      </div>
+      <div class="task-actions">
+        <button class="secondary" onclick="openProtocolItemDialog('${protocol.id}')">＋ Controlepunt</button>
+      </div>
+    </article>`;
+}
+
+function openProtocolDialog() {
+  document.getElementById("protocolForm").reset();
+  document.getElementById("protocolVersion").value = "1.0";
+  document.getElementById("protocolDialog").showModal();
+}
+
+document.getElementById("protocolForm").addEventListener("submit", event => {
+  event.preventDefault();
+  try {
+    createProtocol({
+      name: document.getElementById("protocolName").value,
+      version: document.getElementById("protocolVersion").value,
+      description: document.getElementById("protocolDescription").value
+    });
+    document.getElementById("protocolDialog").close();
+    render();
+  } catch (error) {
+    alert(error.message);
+  }
+});
+
+function openProtocolItemDialog(protocolId) {
+  document.getElementById("protocolItemForm").reset();
+  document.getElementById("protocolItemProtocolId").value = protocolId;
+  document.getElementById("protocolItemRequired").checked = true;
+  document.getElementById("protocolItemDialog").showModal();
+}
+
+document.getElementById("protocolItemForm").addEventListener("submit", event => {
+  event.preventDefault();
+  try {
+    createProtocolItem({
+      protocolId: document.getElementById("protocolItemProtocolId").value,
+      title: document.getElementById("protocolItemTitle").value,
+      description: document.getElementById("protocolItemDescription").value,
+      required: document.getElementById("protocolItemRequired").checked
+    });
+    document.getElementById("protocolItemDialog").close();
+    render();
+  } catch (error) {
+    alert(error.message);
+  }
 }
 
 function toggleTask(id, checked) {
