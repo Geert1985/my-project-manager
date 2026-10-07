@@ -90,10 +90,8 @@ function renderTaskTree(projectId, parentId) {
         <div class="task-actions">
           <button class="secondary small" onclick="openTaskDialog('${projectId}', '${task.id}')">＋ Subtaak</button>
           <button class="secondary small" onclick="openSourceDialog('${projectId}', '${task.id}')">＋ Bron</button>
-          <button class="secondary small" onclick="openCheckDialog('${task.id}')">＋ Controle</button>
           <button class="secondary small" onclick="removeTask('${task.id}')">Verwijder</button>
         </div>
-        ${renderTaskCheckSummary(task.id)}
         ${sources.length ? renderTaskSources(sources) : ""}
         ${children.length ? `<div class="children">${renderTaskTree(projectId, task.id)}</div>` : ""}
       </div>
@@ -259,21 +257,31 @@ function renderSourceVersion() {
 }
 
 function renderTaskSources(sources) {
-  return `<div class="source-list">${sources.map(source => {
+  return \`<div class="source-list">${sources.map(source => {
     const versions = getSourceVersions(source.id);
-    return `<div class="source-item">
+    return \`<div class="source-item">
       <div><strong>Bron:</strong> ${esc(source.title)} <span class="badge">${esc(source.type)}</span></div>
-      ${source.author ? `<div class="muted small">Auteur: ${esc(source.author)}</div>` : ""}
+      ${source.author ? \`<div class="muted small">Auteur: ${esc(source.author)}</div>\` : ""}
       <div class="source-actions">
         <button class="secondary small" onclick="openSourceVersionDialog('${source.id}')">＋ Versie</button>
-        ${versions.length ? `<span class="muted small">${versions.length} versie${versions.length === 1 ? "" : "s"}</span>` : `<span class="muted small">Geen versies</span>`}
+        ${versions.length ? \`<span class="muted small">${versions.length} versie${versions.length === 1 ? "" : "s"}</span>\` : \`<span class="muted small">Geen versies</span>\`}
       </div>
-      ${versions.length ? `<div class="source-versions">${versions.map(v => `<div class="muted small">v${esc(v.version)}${v.label ? ` — ${esc(v.label)}` : ""}</div>`).join("")}</div>` : ""}
-    </div>`;
-  }).join("")}</div>`;
+      ${versions.length ? \`<div class="source-versions">${versions.map(v => {
+        const checks = state.checks
+          .filter(check => check.taskId === source.taskId && check.sourceVersionId === v.id)
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        const latestCheck = checks[0] || null;
+        const status = latestCheck ? getCheckDisplayState(latestCheck) : null;
+        return \`<div class="source-version-row">
+          <span class="muted small">v${esc(v.version)}${v.label ? \` — ${esc(v.label)}\` : ""}</span>
+          ${status ? \`<span class="check-status-dot status-dot-${status.key}" title="${esc(status.label)}" aria-label="${esc(status.label)}"></span>\` : \`<span class="check-status-dot status-dot-none" title="Nog niet gecontroleerd" aria-label="Nog niet gecontroleerd"></span>\`}
+          <button class="secondary small" onclick="openCheckDialog('${source.taskId}', '${v.id}')">＋ Controle</button>
+        </div>\`;
+      }).join("")}</div>\` : ""}
+    </div>\`;
+  }).join("")}</div>\`;
 }
-
-function openCheckDialog(taskId) {
+function openCheckDialog(taskId, selectedSourceVersionId = null) {
   const task = state.tasks.find(item => item.id === taskId);
   if (!task) return;
 
@@ -302,6 +310,10 @@ function openCheckDialog(taskId) {
   document.getElementById("checkSourceVersionId").innerHTML = sourceVersions
     .map(({ source, version }) => `<option value="${version.id}">${esc(source.title)} — v${esc(version.version)}</option>`)
     .join("");
+
+  if (selectedSourceVersionId && sourceVersions.some(({ version }) => version.id === selectedSourceVersionId)) {
+    document.getElementById("checkSourceVersionId").value = selectedSourceVersionId;
+  }
 
   document.getElementById("checkDialog").showModal();
 }
