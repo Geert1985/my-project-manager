@@ -85,8 +85,8 @@ function renderTaskTree(projectId, parentId) {
       <div class="task-content">
         <div class="task-header">
           ${hasDetails ? `<button class="task-toggle" type="button" aria-expanded="true" onclick="toggleTaskDetails(this)" title="Taak in- of uitklappen"><span aria-hidden="true">▶</span></button>` : `<span class="task-toggle-placeholder" aria-hidden="true"></span>`}
-          <div class="task-name ${task.status === "completed" ? "completed" : ""}">
-            <strong>${esc(task.name)}</strong>
+          <div class="task-name">
+            <strong class="${task.status === "completed" ? "completed" : ""}">${esc(task.name)}</strong>
             <span class="task-status-label small">${task.status === "completed" ? "Voltooid" : task.status === "in_progress" ? "Bezig" : "Niet gestart"}</span>
             ${children.length ? `<span class="muted small">${children.length} subtaak${children.length === 1 ? "" : "taken"}</span>` : ""}
             ${sources.length ? `<span class="muted small">${sources.length} bron${sources.length === 1 ? "" : "nen"}</span>` : ""}
