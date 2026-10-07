@@ -53,3 +53,23 @@ form input,form textarea,form select { display:block; width:100%; margin-top:6px
 .check-result select { margin-top:8px; max-width:260px; }
 
 .review-box { margin-top:16px; padding-top:12px; border-top:1px solid #e5e7eb; }
+
+/* v0.3 control and review dashboard */
+.status-chip { display:inline-flex; align-items:center; gap:5px; padding:4px 8px; border-radius:999px; font-size:.78rem; font-weight:700; }
+.status-approved { background:#dcfce7; color:#166534; }
+.status-pending { background:#ffedd5; color:#9a3412; }
+.status-failed { background:#fee2e2; color:#991b1b; }
+.status-completed { background:#dbeafe; color:#1e40af; }
+.status-progress { background:#e0f2fe; color:#0369a1; }
+.status-neutral { background:#f3f4f6; color:#4b5563; }
+.dashboard-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:12px 0; }
+.dashboard-stat { padding:12px; border:1px solid #e5e7eb; border-radius:10px; background:#fafafa; }
+.dashboard-stat strong { display:block; font-size:1.35rem; margin-top:3px; }
+.control-row { padding:12px 0; border-top:1px solid #f0f0f0; }
+.control-row:first-child { border-top:0; }
+.control-row-main { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+.control-meta { margin-top:4px; }
+.source-version-card { margin-top:10px; padding:10px; border:1px solid #e5e7eb; border-radius:10px; background:#fafafa; }
+@media (min-width:700px) {
+  .dashboard-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+}
