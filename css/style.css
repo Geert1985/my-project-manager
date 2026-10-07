@@ -5,6 +5,10 @@ button,input,textarea,select { font:inherit; }
 button { cursor:pointer; }
 .topbar { position:sticky; top:0; z-index:10; display:flex; justify-content:space-between; align-items:center; padding:14px 16px; background:#111827; color:white; }
 .topbar h1 { margin:0; font-size:1.15rem; }
+.topbar-actions { display:flex; align-items:center; gap:10px; }
+.top-nav { display:none; align-items:center; gap:4px; }
+.top-nav .nav-btn { flex-direction:row; padding:7px 10px; color:#d1d5db; }
+.top-nav .nav-btn.active { color:white; }
 .container { max-width:900px; margin:0 auto; padding:18px 14px; }
 .card { background:white; border-radius:14px; padding:16px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
 .card h2,.card h3 { margin:0 0 8px; }
@@ -36,6 +40,11 @@ form label { display:block; margin:13px 0; font-weight:600; }
 form input,form textarea,form select { display:block; width:100%; margin-top:6px; padding:10px; border:1px solid #d1d5db; border-radius:8px; }
 .dialog-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:18px; }
 .badge { font-size:.75rem; padding:3px 7px; border-radius:99px; background:#eef2ff; color:#3730a3; }
-@media (min-width:700px) { .container { padding:28px 20px; } .bottom-nav { display:none; } body { padding-bottom:0; } }
+@media (min-width:700px) {
+  .container { padding:28px 20px; }
+  .bottom-nav { display:none; }
+  .top-nav { display:flex; }
+  body { padding-bottom:0; }
+}
 .protocol-items { margin-top:14px; }
 .protocol-item { padding:9px 0; border-top:1px solid #f0f0f0; }
