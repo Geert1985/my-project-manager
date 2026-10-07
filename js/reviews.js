@@ -6,10 +6,6 @@ function createReview({ checkId, reviewer, comment = "" }) {
     throw new Error("Een controle kan pas beoordeeld worden wanneer ze afgerond is.");
   }
 
-  if (check.status === "failed") {
-    throw new Error("Een mislukte controle kan niet worden goedgekeurd. Corrigeer de bron en voer een nieuwe controle uit.");
-  }
-
   if (!reviewer || !reviewer.trim()) {
     throw new Error("Een reviewer is verplicht.");
   }
@@ -37,6 +33,11 @@ function getReview(reviewId) {
 
 function getReviewForCheck(checkId) {
   return state.reviews.find(review => review.checkId === checkId);
+}
+
+function checkForReviewStatus(review) {
+  const check = getCheck(review.checkId);
+  return check ? check.status : null;
 }
 
 function updateReviewStatus({ reviewId, status, comment = "" }) {
