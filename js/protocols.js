@@ -59,13 +59,76 @@ function getProtocolItemsForVersion(protocolVersionId) {
     .sort((a, b) => a.order - b.order);
 }
 
-function createProtocolItem({ protocolId, title, description = "", required = true }) {
+function createProtocolVersion({ protocolId, version, description = "", copyFromVersionId = null }) {
+  const protocol = getProtocol(protocolId);
+  if (!protocol) throw new Error("Protocol bestaat niet.");
+  if (!version || !version.trim()) throw new Error("Een protocolversie is verplicht.");
+
+  const versionName = version.trim();
+  if (getProtocolVersions(protocolId).some(existing => existing.version === versionName)) {
+    throw new Error("Deze protocolversie bestaat al.");
+  }
+
+  let sourceVersion = null;
+  if (copyFromVersionId) {
+    sourceVersion = getProtocolVersion(copyFromVersionId);
+    if (!sourceVersion || sourceVersion.protocolId !== protocolId) {
+      throw new Error("De bronversie bestaat niet binnen dit protocol.");
+    }
+  }
+
+  const now = new Date().toISOString();
+  const newVersion = {
+    id: crypto.randomUUID(),
+    protocolId,
+    version: versionName,
+    description: description.trim(),
+    status: "draft",
+    createdAt: now
+  };
+
+  state.protocolVersions.push(newVersion);
+
+  if (sourceVersion) {
+    const sourceItems = getProtocolItemsForVersion(sourceVersion.id);
+    sourceItems.forEach(sourceItem => {
+      state.protocolItems.push({
+        id: crypto.randomUUID(),
+        protocolId,
+        protocolVersionId: newVersion.id,
+        order: sourceItem.order,
+        title: sourceItem.title,
+        description: sourceItem.description || "",
+        required: Boolean(sourceItem.required),
+        createdAt: now,
+        updatedAt: now
+      });
+    });
+  }
+
+  protocol.updatedAt = now;
+  saveState();
+  return newVersion;
+}
+
+function createProtocolItem({ protocolId, protocolVersionId = null, title, description = "", required = true }) {
   const protocol = getProtocol(protocolId);
   if (!protocol) throw new Error("Protocol bestaat niet.");
   if (!title || !title.trim()) throw new Error("Een controlepunt heeft een titel nodig.");
 
-  const version = getActiveProtocolVersion(protocolId);
-  if (!version) throw new Error("Het protocol heeft geen actieve versie.");
+  const version = protocolVersionId
+    ? getProtocolVersion(protocolVersionId)
+    : getActiveProtocolVersion(protocolId);
+
+  if (!version || version.protocolId !== protocolId) {
+    throw new Error("De protocolversie bestaat niet binnen dit protocol.");
+  }
+  if (version.status !== "draft") {
+    throw new Error("Alleen controlepunten van een draft-versie kunnen worden aangepast.");
+  }
+  if (state.checks.some(check => check.protocolVersionId === version.id)) {
+    throw new Error("Deze protocolversie is al in gebruik en kan niet meer worden aangepast.");
+  }
 
   const items = getProtocolItemsForVersion(version.id);
   const nextOrder = items.length ? Math.max(...items.map(item => item.order)) + 1 : 1;
