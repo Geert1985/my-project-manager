@@ -206,7 +206,7 @@ document.getElementById("protocolItemForm").addEventListener("submit", event => 
   } catch (error) {
     alert(error.message);
   }
-}
+});
 
 function toggleTask(id, checked) {
   setTaskCompleted(id, checked, "manual");
