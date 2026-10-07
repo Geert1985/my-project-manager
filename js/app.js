@@ -1,6 +1,7 @@
 const app = document.getElementById("app");
 let currentView = "dashboard";
 let currentProjectId = null;
+let currentCheckId = null;
 
 function esc(value = "") {
   return String(value).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;" }[c]));
@@ -11,6 +12,7 @@ function render() {
   else if (currentView === "tasks") renderAllTasks();
   else if (currentView === "project") renderProject();
   else if (currentView === "protocols") renderProtocols();
+  else if (currentView === "check") renderCheck();
 }
 
 function renderDashboard() {
@@ -86,6 +88,7 @@ function renderTaskTree(projectId, parentId) {
         <div class="task-actions">
           <button class="secondary small" onclick="openTaskDialog('${projectId}', '${task.id}')">＋ Subtaak</button>
           <button class="secondary small" onclick="openSourceDialog('${projectId}', '${task.id}')">＋ Bron</button>
+          <button class="secondary small" onclick="openCheckDialog('${task.id}')">＋ Controle</button>
           <button class="secondary small" onclick="removeTask('${task.id}')">Verwijder</button>
         </div>
         ${sources.length ? renderTaskSources(sources) : ""}
@@ -108,6 +111,125 @@ function renderTaskSources(sources) {
       ${versions.length ? `<div class="source-versions">${versions.map(v => `<div class="muted small">v${esc(v.version)}${v.label ? ` — ${esc(v.label)}` : ""}</div>`).join("")}</div>` : ""}
     </div>`;
   }).join("")}</div>`;
+}
+
+function openCheckDialog(taskId) {
+  const task = state.tasks.find(item => item.id === taskId);
+  if (!task) return;
+
+  const protocols = state.protocols.filter(protocol => protocol.active);
+  const sourceVersions = getTaskSources(taskId).flatMap(source =>
+    getSourceVersions(source.id).map(version => ({ source, version }))
+  );
+
+  if (!protocols.length) {
+    alert("Maak eerst een actief controleprotocol aan.");
+    return;
+  }
+
+  if (!sourceVersions.length) {
+    alert("Voeg eerst minstens één bronversie toe aan deze taak.");
+    return;
+  }
+
+  document.getElementById("checkForm").reset();
+  document.getElementById("checkTaskId").value = taskId;
+
+  document.getElementById("checkProtocolId").innerHTML = protocols
+    .map(protocol => `<option value="${protocol.id}">${esc(protocol.name)} (v${esc(protocol.version)})</option>`)
+    .join("");
+
+  document.getElementById("checkSourceVersionId").innerHTML = sourceVersions
+    .map(({ source, version }) => `<option value="${version.id}">${esc(source.title)} — v${esc(version.version)}</option>`)
+    .join("");
+
+  document.getElementById("checkDialog").showModal();
+}
+
+document.getElementById("checkForm").addEventListener("submit", event => {
+  event.preventDefault();
+  try {
+    const check = createCheck({
+      taskId: document.getElementById("checkTaskId").value,
+      protocolId: document.getElementById("checkProtocolId").value,
+      sourceVersionId: document.getElementById("checkSourceVersionId").value,
+      summary: document.getElementById("checkSummary").value
+    });
+    startCheck(check.id);
+    document.getElementById("checkDialog").close();
+    openCheck(check.id);
+  } catch (error) {
+    alert(error.message);
+  }
+});
+
+function openCheck(checkId) {
+  currentView = "check";
+  currentCheckId = checkId;
+  render();
+}
+
+function renderCheck() {
+  const check = getCheck(currentCheckId);
+  if (!check) { currentView = "dashboard"; return render(); }
+
+  const protocol = getProtocol(check.protocolId);
+  const sourceVersion = getSourceVersion(check.sourceVersionId);
+  const source = sourceVersion ? getSource(sourceVersion.sourceId) : null;
+  const results = getCheckResults(check.id);
+  const items = getProtocolItems(check.protocolId);
+  const resultByItem = new Map(results.map(result => [result.protocolItemId, result]));
+
+  app.innerHTML = `
+    <div class="card">
+      <button class="secondary" onclick="returnFromCheck()">← Terug</button>
+      <h2 style="margin-top:12px">Controle</h2>
+      <p><strong>Protocol:</strong> ${esc(protocol?.name || "")} v${esc(protocol?.version || "")}</p>
+      <p><strong>Bron:</strong> ${esc(source?.title || "")} — v${esc(sourceVersion?.version || "")}</p>
+      <p class="muted">Status: ${esc(check.status)}</p>
+    </div>
+    <div class="card">
+      <h2>Controlepunten</h2>
+      ${items.map(item => {
+        const result = resultByItem.get(item.id);
+        return `
+          <div class="check-result">
+            <div><strong>${item.order}. ${esc(item.title)}</strong>${item.required ? ` <span class="badge">verplicht</span>` : ""}</div>
+            ${item.description ? `<div class="muted small">${esc(item.description)}</div>` : ""}
+            <select onchange="saveCheckResult('${result.id}', this.value)">
+              <option value="not_checked" ${result.status === "not_checked" ? "selected" : ""}>Niet gecontroleerd</option>
+              <option value="pass" ${result.status === "pass" ? "selected" : ""}>Pass</option>
+              <option value="fail" ${result.status === "fail" ? "selected" : ""}>Fail</option>
+              <option value="not_applicable" ${result.status === "not_applicable" ? "selected" : ""}>N.v.t.</option>
+            </select>
+            ${result.comment ? `<div class="muted small">Opmerking: ${esc(result.comment)}</div>` : ""}
+            ${result.evidence ? `<div class="muted small">Bewijs: ${esc(result.evidence)}</div>` : ""}
+          </div>`;
+      }).join("")}
+    </div>
+  `;
+}
+
+function saveCheckResult(resultId, status) {
+  try {
+    updateCheckResult({ checkResultId: resultId, status });
+    render();
+  } catch (error) {
+    alert(error.message);
+    render();
+  }
+}
+
+function returnFromCheck() {
+  const check = getCheck(currentCheckId);
+  const task = check ? state.tasks.find(item => item.id === check.taskId) : null;
+  if (task) {
+    currentProjectId = task.projectId;
+    currentView = "project";
+  } else {
+    currentView = "dashboard";
+  }
+  render();
 }
 
 function renderAllTasks() {
