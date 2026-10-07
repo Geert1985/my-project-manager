@@ -21,9 +21,31 @@ function getProtocol(protocolId) {
   return state.protocols.find(protocol => protocol.id === protocolId);
 }
 
+function getProtocolVersion(protocolVersionId) {
+  return state.protocolVersions.find(version => version.id === protocolVersionId);
+}
+
+function getProtocolVersions(protocolId) {
+  return state.protocolVersions
+    .filter(version => version.protocolId === protocolId)
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
+function getActiveProtocolVersion(protocolId) {
+  return getProtocolVersions(protocolId).find(version => version.status === "active")
+    || getProtocolVersions(protocolId)[getProtocolVersions(protocolId).length - 1]
+    || null;
+}
+
 function getProtocolItems(protocolId) {
   return state.protocolItems
     .filter(item => item.protocolId === protocolId)
+    .sort((a, b) => a.order - b.order);
+}
+
+function getProtocolItemsForVersion(protocolVersionId) {
+  return state.protocolItems
+    .filter(item => item.protocolVersionId === protocolVersionId)
     .sort((a, b) => a.order - b.order);
 }
 
@@ -32,12 +54,16 @@ function createProtocolItem({ protocolId, title, description = "", required = tr
   if (!protocol) throw new Error("Protocol bestaat niet.");
   if (!title || !title.trim()) throw new Error("Een controlepunt heeft een titel nodig.");
 
-  const items = getProtocolItems(protocolId);
+  const version = getActiveProtocolVersion(protocolId);
+  if (!version) throw new Error("Het protocol heeft geen actieve versie.");
+
+  const items = getProtocolItemsForVersion(version.id);
   const nextOrder = items.length ? Math.max(...items.map(item => item.order)) + 1 : 1;
 
   const item = {
     id: crypto.randomUUID(),
     protocolId,
+    protocolVersionId: version.id,
     order: nextOrder,
     title: title.trim(),
     description: description.trim(),
