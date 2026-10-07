@@ -1,10 +1,31 @@
 function createTask({ projectId, parentId = null, name, description = "", priority = "normal" }) {
+  const project = state.projects.find(p => p.id === projectId);
+  if (!project) {
+    throw new Error("Project bestaat niet.");
+  }
+
+  if (!name || !name.trim()) {
+    throw new Error("Een taaknaam is verplicht.");
+  }
+
+  if (parentId) {
+    const parent = state.tasks.find(t => t.id === parentId);
+
+    if (!parent) {
+      throw new Error("Parent-taak bestaat niet.");
+    }
+
+    if (parent.projectId !== projectId) {
+      throw new Error("Een subtaak moet bij hetzelfde project horen als de parent.");
+    }
+  }
+
   const task = {
     id: crypto.randomUUID(),
     projectId,
     parentId,
-    name,
-    description,
+    name: name.trim(),
+    description: description.trim(),
     status: "not_started",
     priority,
     completionMode: "manual",
@@ -123,7 +144,9 @@ function setTaskCompleted(taskId, completed, mode = "manual") {
 
 function deleteTask(taskId) {
   const task = state.tasks.find(t => t.id === taskId);
-  const parentId = task?.parentId || null;
+  if (!task) return;
+
+  const parentId = task.parentId || null;
 
   const ids = new Set([taskId]);
   let changed = true;
