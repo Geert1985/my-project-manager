@@ -107,7 +107,7 @@ function renderTaskTree(projectId, parentId) {
     return `<div class="task-row task-status-${task.status}">
       <input type="checkbox" data-focus-key="task-${task.id}" aria-label="${esc(task.name)} voltooien" ${task.status === "completed" ? "checked" : ""} onchange="toggleTask('${task.id}', this.checked)">
       <div class="task-content">
-        <div class="task-header">
+        <div class="task-header" data-task-header="${task.id}">
           ${hasDetails ? `<button class="task-toggle" type="button" data-task-id="${task.id}" data-focus-key="collapse-${task.id}" aria-expanded="${!collapsedTaskIds.has(task.id)}" onclick="toggleTaskDetails(this)" title="Taak in- of uitklappen"><span aria-hidden="true">▶</span></button>` : `<span class="task-toggle-placeholder" aria-hidden="true"></span>`}
           <div class="task-name">
             <strong class="${task.status === "completed" ? "completed" : ""}">${esc(task.name)}</strong>
@@ -116,6 +116,7 @@ function renderTaskTree(projectId, parentId) {
             ${sources.length ? `<span class="muted small">${sources.length} bron${sources.length === 1 ? "" : "nen"}</span>` : ""}
           </div>
           <div class="task-actions task-actions-compact" aria-label="Taakacties">
+            <button class="task-action-icon task-drag-handle" type="button" data-focus-key="drag-${task.id}" data-task-id="${task.id}" ${tasks.length < 2 ? "disabled" : ""} title="Sleep om de volgorde te wijzigen" aria-label="${esc(task.name)} slepen; gebruik de pijlen voor toetsenbordbediening" onpointerdown="startTaskDrag(this, event)" onpointermove="updateTaskDrag(event)" onpointerup="finishTaskDrag(event)" onpointercancel="cancelTaskDrag()" onlostpointercapture="cancelTaskDrag()">⠿</button>
             <button class="task-action-icon" type="button" data-focus-key="move-up-${task.id}" onclick="moveTaskFromUi('${task.id}', 'up')" ${index === 0 ? "disabled" : ""} title="Taak omhoog" aria-label="${esc(task.name)} omhoog">↑</button>
             <button class="task-action-icon" type="button" data-focus-key="move-down-${task.id}" onclick="moveTaskFromUi('${task.id}', 'down')" ${index === tasks.length - 1 ? "disabled" : ""} title="Taak omlaag" aria-label="${esc(task.name)} omlaag">↓</button>
             <button class="task-action-icon" type="button" data-focus-key="add-task-${task.id}" onclick="openTaskDialog('${projectId}', '${task.id}')" title="Subtaak toevoegen" aria-label="Subtaak toevoegen">＋</button>

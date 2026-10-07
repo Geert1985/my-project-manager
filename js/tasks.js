@@ -90,8 +90,26 @@ function moveTask(taskId, direction) {
   const targetIndex = index + (direction === "up" ? -1 : 1);
   if (targetIndex < 0 || targetIndex >= siblings.length) return false;
 
-  [siblings[index], siblings[targetIndex]] = [siblings[targetIndex], siblings[index]];
-  siblings.forEach((sibling, order) => { sibling.sortOrder = order; });
+  return reorderTask(taskId, siblings[targetIndex].id, direction === "up" ? "before" : "after");
+}
+
+// Both arrow buttons and drag/drop express a move relative to a sibling.
+// This is the only function that rewrites existing sortOrder values.
+function reorderTask(taskId, targetId, placement) {
+  if (!["before", "after"].includes(placement)) throw new Error("Ongeldige plaatsing.");
+  const task = state.tasks.find(item => item.id === taskId);
+  const target = state.tasks.find(item => item.id === targetId);
+  if (!task || !target) throw new Error("Taak bestaat niet.");
+  if (task.projectId !== target.projectId || (task.parentId || null) !== (target.parentId || null)) {
+    throw new Error("Verplaatsen kan alleen binnen hetzelfde project en dezelfde parent.");
+  }
+  if (taskId === targetId) return false;
+  const siblings = getSiblingTasks(task.projectId, task.parentId || null);
+  const reordered = siblings.filter(item => item.id !== taskId);
+  const index = reordered.findIndex(item => item.id === targetId);
+  reordered.splice(index + (placement === "after" ? 1 : 0), 0, task);
+  if (siblings.every((item, position) => item.id === reordered[position].id)) return false;
+  reordered.forEach((sibling, order) => { sibling.sortOrder = order; });
   saveState();
   return true;
 }

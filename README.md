@@ -5,6 +5,7 @@ Een mobiele, generieke project- en checklistwebapp met controle- en reviewfuncti
 ## v0.7 — in ontwikkeling
 
 - taken omhoog/omlaag verplaatsen binnen hetzelfde project en dezelfde parent
+- slepen met muis of touch via de sleephendel; pijlen en slepen gebruiken dezelfde reorderfunctie
 - een parent verplaatsen neemt de volledige subtaakboom mee
 - nieuwe taken verschijnen achteraan binnen hun eigen niveau
 - volgorde blijft bewaard na herladen
@@ -82,6 +83,6 @@ Een bron met gekoppelde controles kan niet worden verwijderd. Een taakboom of pr
 
 Met Node.js 22 of nieuwer: `node tests/release.cjs` en `node tests/task-order.cjs`.
 
-De browserregressietest gebruikt Playwright en een geïnstalleerde Microsoft Edge: `node tests/browser.cjs`. Installeer Playwright in je testomgeving of zet `PLAYWRIGHT_MODULE` naar het beschikbare Playwright-modulepad. De test gebruikt een tijdelijk browserprofiel; bestaande browserdata worden niet gebruikt.
+De browserregressietests gebruiken Playwright en een geïnstalleerde Microsoft Edge: `node tests/browser.cjs` en `node tests/drag.cjs`. Installeer Playwright in je testomgeving of zet `PLAYWRIGHT_MODULE` naar het beschikbare Playwright-modulepad. De tests gebruiken een tijdelijk browserprofiel; bestaande browserdata worden niet gebruikt.
 
 Zie `docs/v0.6-audit.md` voor de v0.6-releasecontrole en `docs/v0.7-task-order.md` voor v0.7. Opslag migreert in v0.7 naar schemaVersion 5 onder de bestaande localStorage-key; wijzig die key niet bij een release.

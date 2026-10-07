@@ -55,4 +55,9 @@ test('deletion gaps do not produce duplicate append order', `deleteTask('a');var
 test('ordering does not change project progress', `var previous=getTaskStats('p').percent;moveTask('c','up');getTaskStats('p').percent===previous`);
 test('v1 empty migration reaches v5', `normalizeState({projects:[],tasks:[]}).schemaVersion===5`);
 test('legacy missing parent and explicit null stay same root group', `var normalized=normalizeState({schemaVersion:4, tasks:[{id:'1',projectId:'p'},{id:'2',projectId:'p',parentId:null}]});normalized.tasks.map(t=>t.sortOrder).join(',')==='0,1'`);
+test('arbitrary insertion uses same persisted sibling order', `reorderTask(last.id,'b','before');var reordered=getSiblingTasks('p');reordered[reordered.findIndex(t=>t.id==='b')-1].id===last.id`);
+test('adjacent and self insertion are no-ops', `var previous=JSON.stringify(state);!reorderTask(last.id,'b','before')&&!reorderTask(last.id,last.id,'after')&&JSON.stringify(state)===previous`);
+test('cross-parent insertion is rejected without mutation', `var previous=JSON.stringify(state);try{reorderTask('b1','b','before');false}catch{JSON.stringify(state)===previous}`);
+test('cross-project insertion is rejected without mutation', `var previous=JSON.stringify(state);try{reorderTask('b','other','after');false}catch{JSON.stringify(state)===previous}`);
+test('invalid placement cannot mutate', `var previous=JSON.stringify(state);try{reorderTask('b','c','inside');false}catch{JSON.stringify(state)===previous}`);
 console.log(`Passed ${passed} task-order tests`);
