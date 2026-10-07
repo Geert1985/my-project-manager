@@ -71,12 +71,6 @@ function renderTaskTree(projectId, parentId) {
 
   return tasks.map(task => {
     const children = getChildren(task.id);
-    const statusLabel = {
-      not_started: "Niet gestart",
-      in_progress: "Bezig",
-      completed: "Voltooid"
-    }[task.status] || task.status;
-
     return `<div class="task-row">
       <input type="checkbox" ${task.status === "completed" ? "checked" : ""} onchange="toggleTask('${task.id}', this.checked)">
       <div class="task-content">
