@@ -65,7 +65,7 @@
 
   <dialog id="sourceDialog">
     <form method="dialog" id="sourceForm">
-      <h2>Nieuwe bron</h2>
+      <h2 id="sourceDialogTitle">Nieuwe bron</h2>
       <input type="hidden" id="sourceTaskId">
       <label>Titel<input id="sourceTitle" required maxlength="200"></label>
       <label>Type
@@ -82,9 +82,10 @@
       <label>Uitgever<input id="sourcePublisher" maxlength="150"></label>
       <label>URL<input id="sourceUrl" type="url"></label>
       <label>Beschrijving<textarea id="sourceDescription" rows="3"></textarea></label>
+      <p class="muted small" id="sourceEditNote" hidden></p>
       <div class="dialog-actions">
         <button type="button" class="secondary" data-dialog-cancel>Annuleren</button>
-        <button value="default" class="primary">Bron toevoegen</button>
+        <button id="sourceSubmitButton" value="default" class="primary">Bron toevoegen</button>
       </div>
     </form>
   </dialog>

@@ -38,6 +38,21 @@ function getSource(sourceId) {
   return state.sources.find(source => source.id === sourceId);
 }
 
+function updateSourceMetadata(sourceId, { title, type, author = "", publisher = "", url, description = "" }) {
+  const source = getSource(sourceId);
+  if (!source) throw new Error("Bron bestaat niet.");
+  if (!title || !title.trim()) throw new Error("Een bronnaam is verplicht.");
+  const nextUrl = url === undefined ? source.url : url.trim();
+  if (!getSourceDeletionState(sourceId).allowed && nextUrl !== source.url) {
+    throw new Error("De bron-URL is historisch beschermd omdat een bronversie door een controle wordt gebruikt. Maak een nieuwe bronversie voor een andere link.");
+  }
+  Object.assign(source, { title: title.trim(), type: type || source.type,
+    author: author.trim(), publisher: publisher.trim(), url: nextUrl,
+    description: description.trim(), updatedAt: new Date().toISOString() });
+  saveState();
+  return source;
+}
+
 function getProjectSources(projectId) {
   return state.sources.filter(source => source.projectId === projectId);
 }

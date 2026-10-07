@@ -13,6 +13,7 @@ Een mobiele, generieke project- en checklistwebapp met controle- en reviewfuncti
 - compacte knoppen met toetsenbordbediening en begrenzing aan begin/einde
 - slepen is de primaire reorderbediening; bron toevoegen, omhoog/omlaag en verwijderen staan in het ⋮-menu
 - inline + uitsluitend voor de eerste subtaak; volgende subtaken via de knop onder de childlijst
+- bronkaarten tonen beschrijving, links en versiegebonden bestandsinformatie/notities; veilig bronmetadata bewerken
 - taak toevoegen onderaan de hoofdtakenlijst en subtaak toevoegen onderaan iedere bestaande childlijst
 
 Zie `docs/v0.7-task-order.md` voor de testscope en handmatige acceptatiecheck.
@@ -86,6 +87,8 @@ Een bron met gekoppelde controles kan niet worden verwijderd. Een taakboom of pr
 
 Met Node.js 22 of nieuwer: `node tests/release.cjs` en `node tests/task-order.cjs`.
 
-De browserregressietests gebruiken Playwright en een geïnstalleerde Microsoft Edge: `node tests/browser.cjs`, `node tests/drag.cjs` en `node tests/menu.cjs`. Installeer Playwright in je testomgeving of zet `PLAYWRIGHT_MODULE` naar het beschikbare Playwright-modulepad. De tests gebruiken een tijdelijk browserprofiel; bestaande browserdata worden niet gebruikt.
+De browserregressietests gebruiken Playwright en een geïnstalleerde Microsoft Edge: `node tests/browser.cjs`, `node tests/drag.cjs`, `node tests/menu.cjs` en `node tests/sources.cjs`. Installeer Playwright in je testomgeving of zet `PLAYWRIGHT_MODULE` naar het beschikbare Playwright-modulepad. De tests gebruiken een tijdelijk browserprofiel; bestaande browserdata worden niet gebruikt.
+
+Zie `docs/source-information.md` voor het bronmodel en de bewerkgrenzen. Beschrijvende bronmetadata kan worden bewerkt; de bron-URL is vergrendeld zodra een check naar een versie verwijst. Bestaande bronversies blijven ongewijzigd.
 
 Zie `docs/v0.6-audit.md` voor de v0.6-releasecontrole en `docs/v0.7-task-order.md` voor v0.7. Opslag migreert in v0.7 naar schemaVersion 5 onder de bestaande localStorage-key; wijzig die key niet bij een release.

@@ -106,6 +106,15 @@ form input,form textarea,form select { display:block; width:100%; margin-top:6px
 .source-card[open] > .source-summary::before { transform:rotate(90deg); }
 .source-card[open] > :not(summary) { margin-left:10px; margin-right:10px; }
 .source-card[open] > .source-versions { margin-left:18px; }
+.source-summary { flex-wrap:wrap; }
+.source-summary-title { flex:1; min-width:0; overflow-wrap:anywhere; }
+.source-card, .source-version-entry, .source-information { overflow-wrap:anywhere; }
+.source-metadata { margin:8px 0; min-width:0; }
+.source-text { white-space:pre-wrap; overflow-wrap:anywhere; }
+.source-open-link { display:inline-block; margin-top:4px; }
+.source-version-entry { padding:8px 0; border-top:1px solid #e5e7eb; }
+.source-version-row { flex-wrap:wrap; }
+.source-version-row > .muted { flex-basis:100px; overflow-wrap:anywhere; }
 
 /* Keep each task's source list on its own row. */
 .source-list { display:block; width:100%; clear:both; }
