@@ -68,12 +68,22 @@ function renderProject() {
 function renderTaskTree(projectId, parentId) {
   const tasks = getProjectTasks(projectId).filter(t => t.parentId === parentId);
   if (!tasks.length) return `<p class="muted small">Nog geen taken.</p>`;
+
   return tasks.map(task => {
     const children = getChildren(task.id);
+    const statusLabel = {
+      not_started: "Niet gestart",
+      in_progress: "Bezig",
+      completed: "Voltooid"
+    }[task.status] || task.status;
+
     return `<div class="task-row">
       <input type="checkbox" ${task.status === "completed" ? "checked" : ""} onchange="toggleTask('${task.id}', this.checked)">
       <div class="task-content">
-        <div class="task-name ${task.status === "completed" ? "completed" : ""}"><strong>${esc(task.name)}</strong></div>
+        <div class="task-name ${task.status === "completed" ? "completed" : ""}">
+          <strong>${esc(task.name)}</strong>
+          ${task.status === "in_progress" ? `<span class="muted small"> — Bezig</span>` : ""}
+        </div>
         ${task.description ? `<div class="muted small">${esc(task.description)}</div>` : ""}
         <div class="task-actions">
           <button class="secondary small" onclick="openTaskDialog('${projectId}', '${task.id}')">＋ Subtaak</button>
@@ -96,19 +106,21 @@ function renderAllTasks() {
 }
 
 function toggleTask(id, checked) {
-  setTaskCompleted(id, checked);
+  setTaskCompleted(id, checked, "manual");
   render();
 }
 
 function removeTask(id) {
   if (confirm("Deze taak en eventuele subtaken verwijderen?")) {
-    deleteTask(id); render();
+    deleteTask(id);
+    render();
   }
 }
 
 function removeProject(id) {
   if (confirm("Dit project en alle taken verwijderen?")) {
-    deleteProject(id); render();
+    deleteProject(id);
+    render();
   }
 }
 
