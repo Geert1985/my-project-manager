@@ -84,7 +84,7 @@ function renderTaskTree(projectId, parentId) {
       <div class="task-content">
         <div class="task-name ${task.status === "completed" ? "completed" : ""}">
           <strong>${esc(task.name)}</strong>
-          ${task.status === "in_progress" ? `<span class="muted small"> — Bezig</span>` : ""}
+          <span class="task-status-label small">${task.status === "completed" ? "Voltooid" : task.status === "in_progress" ? "Bezig" : "Niet gestart"}</span>
         </div>
         ${task.description ? `<div class="muted small">${esc(task.description)}</div>` : ""}
         <div class="task-actions">
