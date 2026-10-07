@@ -37,3 +37,5 @@ form input,form textarea,form select { display:block; width:100%; margin-top:6px
 .dialog-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:18px; }
 .badge { font-size:.75rem; padding:3px 7px; border-radius:99px; background:#eef2ff; color:#3730a3; }
 @media (min-width:700px) { .container { padding:28px 20px; } .bottom-nav { display:none; } body { padding-bottom:0; } }
+.protocol-items { margin-top:14px; }
+.protocol-item { padding:9px 0; border-top:1px solid #f0f0f0; }
