@@ -2,14 +2,36 @@ const STORAGE_KEY = "my-project-manager-v0.1";
 
 const defaultState = {
   projects: [],
-  tasks: []
+  tasks: [],
+  sources: [],
+  sourceVersions: [],
+  protocols: [],
+  protocolItems: [],
+  checks: [],
+  checkResults: [],
+  reviews: []
 };
 
-function normalizeState(raw) {
-  const normalized = raw && typeof raw === "object" ? raw : structuredClone(defaultState);
+function normalizeArray(value) {
+  return Array.isArray(value) ? value : [];
+}
 
-  normalized.projects = Array.isArray(normalized.projects) ? normalized.projects : [];
-  normalized.tasks = Array.isArray(normalized.tasks) ? normalized.tasks : [];
+function normalizeState(raw) {
+  const normalized = raw && typeof raw === "object"
+    ? raw
+    : structuredClone(defaultState);
+
+  normalized.projects = normalizeArray(normalized.projects);
+  normalized.tasks = normalizeArray(normalized.tasks);
+
+  // v0.2 collections. Older localStorage data receives empty collections.
+  normalized.sources = normalizeArray(normalized.sources);
+  normalized.sourceVersions = normalizeArray(normalized.sourceVersions);
+  normalized.protocols = normalizeArray(normalized.protocols);
+  normalized.protocolItems = normalizeArray(normalized.protocolItems);
+  normalized.checks = normalizeArray(normalized.checks);
+  normalized.checkResults = normalizeArray(normalized.checkResults);
+  normalized.reviews = normalizeArray(normalized.reviews);
 
   // Migrate tasks created before completionMode existed.
   normalized.tasks = normalized.tasks.map(task => ({
