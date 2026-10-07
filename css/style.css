@@ -143,6 +143,15 @@ button:disabled { cursor:not-allowed; opacity:.55; }
 
 /* v0.6 collapsible task tree */
 .task-header { display:flex; align-items:flex-start; gap:7px; }
+.task-section-header { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.task-section-header h2 { margin:0; }
+.task-view-controls { display:flex; flex-wrap:wrap; align-items:center; gap:6px; flex:1; min-width:0; }
+.task-view-controls select { max-width:100%; min-width:0; }
+@media (max-width:600px) {
+  .task-create-top { margin-left:auto; }
+  .task-view-controls { order:2; flex-basis:100%; }
+  .task-view-controls select { flex:1; }
+}
 .task-toggle {
   flex:0 0 24px;
   width:24px;
