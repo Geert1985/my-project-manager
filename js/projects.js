@@ -24,21 +24,21 @@ function getProject(projectId) {
 }
 
 function deleteProject(projectId) {
-  state.projects = state.projects.filter(p => p.id !== projectId);
-
   const taskIds = new Set(
     state.tasks.filter(task => task.projectId === projectId).map(task => task.id)
   );
 
-  state.tasks = state.tasks.filter(task => task.projectId !== projectId);
-
   const sourceIds = new Set(
     state.sources
-      .filter(source => source.projectId === projectId)
+      .filter(source => source.projectId === projectId || taskIds.has(source.taskId))
       .map(source => source.id)
   );
 
-  state.sources = state.sources.filter(source => source.projectId !== projectId);
+  assertDeletionPreservesHistory(taskIds, sourceIds);
+
+  state.projects = state.projects.filter(p => p.id !== projectId);
+  state.tasks = state.tasks.filter(task => !taskIds.has(task.id));
+  state.sources = state.sources.filter(source => !sourceIds.has(source.id));
   state.sourceVersions = state.sourceVersions.filter(version => !sourceIds.has(version.sourceId));
 
   saveState();

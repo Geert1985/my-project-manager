@@ -41,8 +41,11 @@ function createTask({ projectId, parentId = null, name, description = "", priori
     const parent = state.tasks.find(t => t.id === parentId);
     if (parent && parent.status === "completed") {
       updateTaskState(parent, "in_progress", "manual");
+      const ancestor = state.tasks.find(t => t.id === parent.parentId);
+      if (ancestor) reconcileTaskAndAncestors(ancestor);
+    } else if (parent) {
+      reconcileTaskAndAncestors(parent);
     }
-    if (parent) reconcileTaskAndAncestors(parent);
   }
 
   saveState();
@@ -85,7 +88,7 @@ function reconcileTask(task) {
 
   // Only automatically completed parents are automatically reopened.
   if (task.status === "completed" && task.completionMode === "automatic") {
-    updateTaskState(task, someCompleted ? "in_progress" : "not_started", "automatic");
+    updateTaskState(task, "in_progress", "automatic");
     return;
   }
 
@@ -138,7 +141,14 @@ function setTaskCompleted(taskId, completed, mode = "manual") {
     updateTaskState(task, someCompleted ? "in_progress" : "not_started", mode);
   }
 
-  reconcileTaskAndAncestors(task);
+  // An explicit reopen must survive this action even if every child is done.
+  // Subsequent child changes still reconcile this parent normally.
+  if (!completed && mode === "manual") {
+    const parent = state.tasks.find(t => t.id === task.parentId);
+    if (parent) reconcileTaskAndAncestors(parent);
+  } else {
+    reconcileTaskAndAncestors(task);
+  }
   saveState();
 }
 
@@ -161,7 +171,12 @@ function deleteTask(taskId) {
     }
   }
 
+  const sourceIds = new Set(state.sources.filter(source => ids.has(source.taskId)).map(source => source.id));
+  assertDeletionPreservesHistory(ids, sourceIds);
+
   state.tasks = state.tasks.filter(t => !ids.has(t.id));
+  state.sources = state.sources.filter(source => !sourceIds.has(source.id));
+  state.sourceVersions = state.sourceVersions.filter(version => !sourceIds.has(version.sourceId));
 
   // Recalculate the parent itself after deleting its child.
   if (parentId) {

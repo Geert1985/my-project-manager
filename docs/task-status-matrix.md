@@ -43,7 +43,14 @@ Een handmatig voltooide parent betekent: de gebruiker beschouwt het volledige we
 
 Bestaande subtaken kunnen de parent daarna niet automatisch heropenen.
 
+Wanneer de gebruiker de parent zelf heropent, blijft deze tijdens die actie
+`in_progress` als er voltooide children zijn, ook wanneer alle children voltooid
+zijn. Children blijven ongewijzigd. Een volgende child-actie herberekent de
+ancestors opnieuw volgens de gewone regels.
+
 **Uitzondering:** wanneer een nieuwe subtaak wordt toegevoegd, ontstaat nieuw werk. De parent wordt dan opnieuw `in_progress`.
+
+Dit geldt ook voor de eerste subtaak van een voltooide leaf task.
 
 ### Automatisch voltooide parent
 

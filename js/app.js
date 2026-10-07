@@ -2,12 +2,18 @@ const app = document.getElementById("app");
 let currentView = "dashboard";
 let currentProjectId = null;
 let currentCheckId = null;
+const collapsedTaskIds = new Set();
+let dialogReturnFocusKey = null;
 
 function esc(value = "") {
   return String(value).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;" }[c]));
 }
 
 function render() {
+  const focusKey = document.activeElement?.getAttribute("data-focus-key") || dialogReturnFocusKey;
+  const openSourceIds = new Set([...app.querySelectorAll("details[data-source-id][open]")]
+    .map(element => element.getAttribute("data-source-id")));
+  dialogReturnFocusKey = null;
   if (currentView === "dashboard") renderDashboard();
   else if (currentView === "tasks") renderAllTasks();
   else if (currentView === "project") renderProject();
@@ -15,6 +21,23 @@ function render() {
   else if (currentView === "controls") renderControlsDashboard();
   else if (currentView === "check") renderCheck();
   else if (currentView === "sourceVersion") renderSourceVersion();
+  app.querySelectorAll("details[data-source-id]").forEach(element => {
+    element.open = openSourceIds.has(element.getAttribute("data-source-id"));
+  });
+  restoreAppFocus(focusKey);
+}
+
+function restoreAppFocus(key) {
+  if (!key) return;
+  const target = [...app.querySelectorAll("[data-focus-key]")]
+    .find(element => element.getAttribute("data-focus-key") === key);
+  const fallback = [...app.querySelectorAll("button, input, [tabindex]")]
+    .find(element => element.getClientRects().length);
+  (target?.getClientRects().length ? target : fallback)?.focus({ preventScroll: true });
+}
+
+function rememberDialogFocus() {
+  dialogReturnFocusKey = document.activeElement?.getAttribute("data-focus-key") || null;
 }
 
 function renderDashboard() {
@@ -81,23 +104,23 @@ function renderTaskTree(projectId, parentId) {
     const sources = getTaskSources(task.id);
     const hasDetails = Boolean(task.description || sources.length || children.length);
     return `<div class="task-row task-status-${task.status}">
-      <input type="checkbox" ${task.status === "completed" ? "checked" : ""} onchange="toggleTask('${task.id}', this.checked)">
+      <input type="checkbox" data-focus-key="task-${task.id}" aria-label="${esc(task.name)} voltooien" ${task.status === "completed" ? "checked" : ""} onchange="toggleTask('${task.id}', this.checked)">
       <div class="task-content">
         <div class="task-header">
-          ${hasDetails ? `<button class="task-toggle" type="button" aria-expanded="true" onclick="toggleTaskDetails(this)" title="Taak in- of uitklappen"><span aria-hidden="true">▶</span></button>` : `<span class="task-toggle-placeholder" aria-hidden="true"></span>`}
+          ${hasDetails ? `<button class="task-toggle" type="button" data-task-id="${task.id}" data-focus-key="collapse-${task.id}" aria-expanded="${!collapsedTaskIds.has(task.id)}" onclick="toggleTaskDetails(this)" title="Taak in- of uitklappen"><span aria-hidden="true">▶</span></button>` : `<span class="task-toggle-placeholder" aria-hidden="true"></span>`}
           <div class="task-name">
             <strong class="${task.status === "completed" ? "completed" : ""}">${esc(task.name)}</strong>
             <span class="task-status-label small">${task.status === "completed" ? "Voltooid" : task.status === "in_progress" ? "Bezig" : "Niet gestart"}</span>
-            ${children.length ? `<span class="muted small">${children.length} subtaak${children.length === 1 ? "" : "taken"}</span>` : ""}
+            ${children.length ? `<span class="muted small">${children.length} ${children.length === 1 ? "subtaak" : "subtaken"}</span>` : ""}
             ${sources.length ? `<span class="muted small">${sources.length} bron${sources.length === 1 ? "" : "nen"}</span>` : ""}
           </div>
           <div class="task-actions task-actions-compact" aria-label="Taakacties">
-            <button class="task-action-icon" type="button" onclick="openTaskDialog('${projectId}', '${task.id}')" title="Subtaak toevoegen" aria-label="Subtaak toevoegen">＋</button>
-            <button class="task-action-icon" type="button" onclick="openSourceDialog('${projectId}', '${task.id}')" title="Bron toevoegen" aria-label="Bron toevoegen">🔗</button>
-            <button class="task-action-icon task-action-delete" type="button" onclick="removeTask('${task.id}')" title="Taak verwijderen" aria-label="Taak verwijderen">🗑</button>
+            <button class="task-action-icon" type="button" data-focus-key="add-task-${task.id}" onclick="openTaskDialog('${projectId}', '${task.id}')" title="Subtaak toevoegen" aria-label="Subtaak toevoegen">＋</button>
+            <button class="task-action-icon" type="button" data-focus-key="add-source-${task.id}" onclick="openSourceDialog('${projectId}', '${task.id}')" title="Bron toevoegen" aria-label="Bron toevoegen">🔗</button>
+            <button class="task-action-icon task-action-delete" type="button" data-focus-key="delete-task-${task.id}" onclick="removeTask('${task.id}')" title="Taak verwijderen" aria-label="Taak verwijderen">🗑</button>
           </div>
         </div>
-        <div class="task-details">
+        <div class="task-details" ${collapsedTaskIds.has(task.id) ? "hidden" : ""}>
           ${task.description ? `<div class="muted small">${esc(task.description)}</div>` : ""}
           ${sources.length ? renderTaskSources(sources) : ""}
           ${children.length ? `<div class="children">${renderTaskTree(projectId, task.id)}</div>` : ""}
@@ -116,6 +139,9 @@ function toggleTaskDetails(button) {
   const expanded = button.getAttribute("aria-expanded") === "true";
   button.setAttribute("aria-expanded", String(!expanded));
   details.hidden = expanded;
+  const taskId = button.getAttribute("data-task-id");
+  if (expanded) collapsedTaskIds.add(taskId);
+  else collapsedTaskIds.delete(taskId);
 }
 
 
@@ -134,34 +160,12 @@ function renderStatusChip(check) {
   return `<span class="status-chip status-${status.key}">${status.icon} ${status.label}</span>`;
 }
 
-function renderTaskCheckSummary(taskId) {
-  const checks = getTaskChecks(taskId);
-  if (!checks.length) return "";
-
-  const rows = checks.map(check => {
-    const sourceVersion = getSourceVersion(check.sourceVersionId);
-    const source = sourceVersion ? getSource(sourceVersion.sourceId) : null;
-    const sourceLabel = source
-      ? `${esc(source.title)}${sourceVersion?.version ? ` v${esc(sourceVersion.version)}` : ""}`
-      : "Onbekende bron";
-
-    return `<div class="check-summary-row">
-      <span>${sourceLabel}</span>
-      ${renderStatusChip(check)}
-    </div>`;
-  }).join("");
-
-  return `<div class="check-summary" style="margin-top:6px">
-    <div class="muted small">${checks.length} controle${checks.length === 1 ? "" : "s"}</div>
-    ${rows}
-  </div>`;
-}
-
 let activeControlFilter = null;
 
 function setControlFilter(filter) {
   activeControlFilter = activeControlFilter === filter ? null : filter;
   renderControlsDashboard();
+  restoreAppFocus(`filter-${filter}`);
 }
 
 function renderControlsDashboard() {
@@ -187,10 +191,10 @@ function renderControlsDashboard() {
       <h2>Controle- en reviewdashboard</h2>
       <p class="muted">Overzicht van alle uitgevoerde controles, reviews en hun actuele status.</p>
       <div class="dashboard-grid">
-        <button class="dashboard-stat dashboard-filter ${activeControlFilter === "approved" ? "active" : ""}" type="button" aria-pressed="${activeControlFilter === "approved"}" onclick="setControlFilter('approved')"><span>🟢 Goedgekeurd</span><strong>${counts.approved}</strong></button>
-        <button class="dashboard-stat dashboard-filter ${activeControlFilter === "pending" ? "active" : ""}" type="button" aria-pressed="${activeControlFilter === "pending"}" onclick="setControlFilter('pending')"><span>🟠 Review in behandeling</span><strong>${counts.pending}</strong></button>
-        <button class="dashboard-stat dashboard-filter ${activeControlFilter === "failed" ? "active" : ""}" type="button" aria-pressed="${activeControlFilter === "failed"}" onclick="setControlFilter('failed')"><span>🔴 Controle mislukt</span><strong>${counts.failed}</strong></button>
-        <button class="dashboard-stat dashboard-filter ${activeControlFilter === "completed" ? "active" : ""}" type="button" aria-pressed="${activeControlFilter === "completed"}" onclick="setControlFilter('completed')"><span>🔵 Controle uitgevoerd</span><strong>${counts.completed}</strong></button>
+        <button class="dashboard-stat dashboard-filter ${activeControlFilter === "approved" ? "active" : ""}" type="button" aria-pressed="${activeControlFilter === "approved"}" data-focus-key="filter-approved" onclick="setControlFilter('approved')"><span>🟢 Goedgekeurd</span><strong>${counts.approved}</strong></button>
+        <button class="dashboard-stat dashboard-filter ${activeControlFilter === "pending" ? "active" : ""}" type="button" aria-pressed="${activeControlFilter === "pending"}" data-focus-key="filter-pending" onclick="setControlFilter('pending')"><span>🟠 Review in behandeling</span><strong>${counts.pending}</strong></button>
+        <button class="dashboard-stat dashboard-filter ${activeControlFilter === "failed" ? "active" : ""}" type="button" aria-pressed="${activeControlFilter === "failed"}" data-focus-key="filter-failed" onclick="setControlFilter('failed')"><span>🔴 Controle mislukt</span><strong>${counts.failed}</strong></button>
+        <button class="dashboard-stat dashboard-filter ${activeControlFilter === "completed" ? "active" : ""}" type="button" aria-pressed="${activeControlFilter === "completed"}" data-focus-key="filter-completed" onclick="setControlFilter('completed')"><span>🔵 Controle uitgevoerd</span><strong>${counts.completed}</strong></button>
       </div>
       ${activeControlFilter ? `<div class="active-filter-note small">Filter actief: <strong>${filterLabels[activeControlFilter]}</strong> · klik opnieuw op dezelfde kaart om alle controles te tonen.</div>` : ""}
     </div>
@@ -296,12 +300,12 @@ function renderSourceVersion() {
 function renderTaskSources(sources) {
   return `<div class="source-list">${sources.map(source => {
     const versions = [...getSourceVersions(source.id)].reverse();
-    return `<details class="source-item source-card">\n      <summary class="source-summary"><strong>Bron:</strong> ${esc(source.title)} <span class="badge">${esc(source.type)}</span> <span class="muted small">· ${versions.length} versie${versions.length === 1 ? "" : "s"}</span></summary>
+    return `<details class="source-item source-card" data-source-id="${source.id}">\n      <summary class="source-summary"><strong>Bron:</strong> ${esc(source.title)} <span class="badge">${esc(source.type)}</span> <span class="muted small">· ${versions.length} versie${versions.length === 1 ? "" : "s"}</span></summary>
       <div><strong>Bron:</strong> ${esc(source.title)} <span class="badge">${esc(source.type)}</span></div>
       ${source.author ? `<div class="muted small">Auteur: ${esc(source.author)}</div>` : ""}
       <div class="source-actions">
-        <button class="secondary small" onclick="openSourceVersionDialog('${source.id}')">＋ Versie</button>
-        <button class="secondary small" onclick="removeSource('${source.id}')" title="Bron verwijderen">🗑 Verwijder bron</button>
+        <button class="secondary small" data-focus-key="add-version-${source.id}" onclick="openSourceVersionDialog('${source.id}')">＋ Versie</button>
+        <button class="secondary small" data-focus-key="delete-source-${source.id}" onclick="removeSource('${source.id}')" title="Bron verwijderen">🗑 Verwijder bron</button>
         ${versions.length ? `<span class="muted small">${versions.length} versie${versions.length === 1 ? "" : "s"}</span>` : `<span class="muted small">Geen versies</span>`}
       </div>
       ${versions.length ? `<div class="source-versions">${versions.map(v => {
@@ -548,7 +552,7 @@ function renderAllTasks() {
   const open = state.tasks.filter(t => t.status !== "completed");
   app.innerHTML = `<div class="card"><h2>Alle openstaande taken</h2>
     ${open.length ? open.map(t => `<div class="task-row">
-      <input type="checkbox" onchange="toggleTask('${t.id}', this.checked)">
+      <input type="checkbox" data-focus-key="task-${t.id}" aria-label="${esc(t.name)} voltooien" onchange="toggleTask('${t.id}', this.checked)">
       <div class="task-content"><strong>${esc(t.name)}</strong><div class="muted small">${esc(getProject(t.projectId)?.name || "")}</div></div>
     </div>`).join("") : `<div class="empty">Geen openstaande taken.</div>`}
   </div>`;
@@ -748,15 +752,23 @@ function toggleTask(id, checked) {
 
 function removeTask(id) {
   if (confirm("Deze taak en eventuele subtaken verwijderen?")) {
-    deleteTask(id);
-    render();
+    try {
+      deleteTask(id);
+      render();
+    } catch (error) {
+      alert(error.message);
+    }
   }
 }
 
 function removeProject(id) {
   if (confirm("Dit project en alle taken verwijderen?")) {
-    deleteProject(id);
-    render();
+    try {
+      deleteProject(id);
+      render();
+    } catch (error) {
+      alert(error.message);
+    }
   }
 }
 
@@ -787,6 +799,7 @@ document.getElementById("projectForm").addEventListener("submit", event => {
 });
 
 function openTaskDialog(projectId, parentId) {
+  rememberDialogFocus();
   currentProjectId = projectId;
   document.getElementById("taskForm").reset();
   document.getElementById("taskParentId").value = parentId || "";
@@ -811,6 +824,7 @@ document.getElementById("taskForm").addEventListener("submit", event => {
 });
 
 function openSourceDialog(projectId, taskId) {
+  rememberDialogFocus();
   currentProjectId = projectId;
   document.getElementById("sourceForm").reset();
   document.getElementById("sourceTaskId").value = taskId;
@@ -838,6 +852,7 @@ document.getElementById("sourceForm").addEventListener("submit", event => {
 });
 
 function openSourceVersionDialog(sourceId) {
+  rememberDialogFocus();
   document.getElementById("sourceVersionForm").reset();
   document.getElementById("sourceVersionSourceId").value = sourceId;
   document.getElementById("sourceVersionDialog").showModal();
@@ -866,7 +881,12 @@ document.querySelectorAll("[data-dialog-cancel]").forEach(button => {
   button.addEventListener("click", () => {
     const dialog = button.closest("dialog");
     if (dialog?.open) dialog.close();
+    dialogReturnFocusKey = null;
   });
+});
+
+document.querySelectorAll("dialog").forEach(dialog => {
+  dialog.addEventListener("cancel", () => { dialogReturnFocusKey = null; });
 });
 
 document.getElementById("newProjectBtn").addEventListener("click", openProjectDialog);

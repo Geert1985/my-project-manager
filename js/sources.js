@@ -101,6 +101,14 @@ function getSourceVersion(sourceVersionId) {
 }
 
 
+function assertDeletionPreservesHistory(taskIds, sourceIds) {
+  const versionIds = new Set(state.sourceVersions
+    .filter(version => sourceIds.has(version.sourceId)).map(version => version.id));
+  if (state.checks.some(check => taskIds.has(check.taskId) || versionIds.has(check.sourceVersionId))) {
+    throw new Error("Verwijderen is niet toegestaan: dit project of deze taak bevat controles. Taken, bronnen, bronversies en de historische controleketen blijven behouden.");
+  }
+}
+
 function getSourceDeletionState(sourceId) {
   const source = getSource(sourceId);
   if (!source) return { allowed: false, reason: "Bron bestaat niet." };
