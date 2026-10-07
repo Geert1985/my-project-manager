@@ -51,10 +51,11 @@ function renderDashboard() {
     app.innerHTML = `<div class="card empty">
       <h2>Welkom</h2><p>Maak je eerste project aan.</p>
       <button class="primary" onclick="openProjectDialog()">＋ Nieuw project</button>
+      <button class="secondary" onclick="chooseProjectImport()">Project importeren</button>
     </div>`;
     return;
   }
-  app.innerHTML = `<div class="card"><h2>Mijn projecten</h2><p class="muted">Projecten, taken, bronnen en voortgang op één plaats.</p></div>` +
+  app.innerHTML = `<div class="card"><h2>Mijn projecten</h2><p class="muted">Projecten, taken, bronnen en voortgang op één plaats.</p><button class="secondary" onclick="chooseProjectImport()">Project importeren</button></div>` +
     state.projects.map(projectCard).join("");
 }
 
@@ -69,6 +70,7 @@ function projectCard(project) {
     <p class="muted small">${sourceCount} bron${sourceCount === 1 ? "" : "nen"}</p>
     <div class="task-actions">
       <button class="primary" onclick="openProject('${project.id}')">Open project</button>
+      <button class="secondary" onclick="downloadProject('${project.id}')">Project exporteren</button>
       <button class="secondary" onclick="removeProject('${project.id}')">Verwijder</button>
     </div>
   </article>`;
@@ -87,6 +89,7 @@ function renderProject() {
   app.innerHTML = `<div class="card">
     <button class="secondary" onclick="goHome()">← Terug</button>
     <h2 style="margin-top:12px">${esc(project.name)}</h2>
+    <button class="secondary" onclick="downloadProject('${project.id}')">Project exporteren</button>
     <p class="muted">${esc(project.description || "")}</p>
     <div class="project-meta"><span>${stats.completed} / ${stats.total} taken</span><strong>${stats.percent}%</strong></div>
     <div class="progress"><div style="width:${stats.percent}%"></div></div>

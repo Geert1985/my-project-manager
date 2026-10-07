@@ -14,6 +14,7 @@ Een mobiele, generieke project- en checklistwebapp met controle- en reviewfuncti
 - slepen is de primaire reorderbediening; bron toevoegen, omhoog/omlaag en verwijderen staan in het ⋮-menu
 - inline + uitsluitend voor de eerste subtaak; volgende subtaken via de knop onder de childlijst
 - bronkaarten tonen beschrijving, links en versiegebonden bestandsinformatie/notities; veilig bronmetadata bewerken
+- afzonderlijke projecten importeren/exporteren als stabiel JSON-formaat, inclusief optionele historische controles
 - taak toevoegen onderaan de hoofdtakenlijst en subtaak toevoegen onderaan iedere bestaande childlijst
 
 Zie `docs/v0.7-task-order.md` voor de testscope en handmatige acceptatiecheck.
@@ -85,10 +86,18 @@ Een bron met gekoppelde controles kan niet worden verwijderd. Een taakboom of pr
 
 ## Tests
 
-Met Node.js 22 of nieuwer: `node tests/release.cjs` en `node tests/task-order.cjs`.
+Met Node.js 22 of nieuwer: `node tests/release.cjs`, `node tests/task-order.cjs` en `node tests/interchange.cjs`.
 
 De browserregressietests gebruiken Playwright en een geïnstalleerde Microsoft Edge: `node tests/browser.cjs`, `node tests/drag.cjs`, `node tests/menu.cjs` en `node tests/sources.cjs`. Installeer Playwright in je testomgeving of zet `PLAYWRIGHT_MODULE` naar het beschikbare Playwright-modulepad. De tests gebruiken een tijdelijk browserprofiel; bestaande browserdata worden niet gebruikt.
 
 Zie `docs/source-information.md` voor het bronmodel en de bewerkgrenzen. Beschrijvende bronmetadata kan worden bewerkt; de bron-URL is vergrendeld zodra een check naar een versie verwijst. Bestaande bronversies blijven ongewijzigd.
+
+## Project importeren/exporteren
+
+Gebruik **Project importeren** op Home om een JSON-bestand als nieuw project toe te voegen. Bij een project staat **Project exporteren** voor een download/back-up van uitsluitend dat project. Import maakt altijd nieuwe IDs, ook wanneer het origineel al bestaat. Een fout bestand of mislukte opslag wijzigt bestaande projecten niet.
+
+Het publieke formaat en voorbeelden voor ChatGPT staan in `docs/project-interchange-format.md`. Geneste tasks/children bepalen hiërarchie en volgorde; simpele checklists hebben geen refs nodig. Checks/reviews kunnen als optionele historische secties worden meegenomen. Globale protocoltemplates buiten de gebruikte historische versies worden niet geëxporteerd.
+
+Gebruik `node tests/interchange-browser.cjs` voor bestandskiezer/download/refresh-tests met Playwright en Edge.
 
 Zie `docs/v0.6-audit.md` voor de v0.6-releasecontrole en `docs/v0.7-task-order.md` voor v0.7. Opslag migreert in v0.7 naar schemaVersion 5 onder de bestaande localStorage-key; wijzig die key niet bij een release.
