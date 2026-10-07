@@ -3,7 +3,7 @@ let taskDrag = null;
 let taskDragFrame = null;
 
 function startTaskDrag(handle, event) {
-  if (handle.disabled || !event.isPrimary || event.button !== 0) return;
+  if (taskSortView !== "manual" || handle.disabled || !event.isPrimary || event.button !== 0) return;
   cancelTaskDrag();
   event.preventDefault();
   handle.focus({ preventScroll: true });
@@ -66,7 +66,7 @@ function finishTaskDrag(event) {
   }
   const { active, taskId, targetId, placement } = taskDrag;
   cancelTaskDrag();
-  if (!active || !targetId) return;
+  if (taskSortView !== "manual" || !active || !targetId) return;
   try {
     if (reorderTask(taskId, targetId, placement)) {
       render();

@@ -5,6 +5,48 @@ let currentCheckId = null;
 const collapsedTaskIds = new Set();
 let dialogReturnFocusKey = null;
 let editingSourceId = null;
+let taskSortView = "manual";
+const TASK_REORDER_HINT = "Schakel over naar handmatige volgorde om taken te verplaatsen.";
+
+function getTaskViewSiblings(projectId, parentId) {
+  const tasks = getSiblingTasks(projectId, parentId);
+  if (taskSortView === "priority") {
+    const rank = { high:0, normal:1, low:2 };
+    // getSiblingTasks returns a fresh array in manual order; stable sort keeps ties.
+    tasks.sort((a, b) => (rank[a.priority] ?? 1) - (rank[b.priority] ?? 1));
+  }
+  return tasks;
+}
+
+function getCollapsibleTasks(projectId) {
+  return getProjectTasks(projectId).filter(task => task.description || getTaskSources(task.id).length || getChildren(task.id).length);
+}
+
+function allProjectTasksCollapsed(projectId) {
+  const tasks = getCollapsibleTasks(projectId);
+  return tasks.length > 0 && tasks.every(task => collapsedTaskIds.has(task.id));
+}
+
+function toggleAllTaskDetails(projectId) {
+  const expand = allProjectTasksCollapsed(projectId);
+  getCollapsibleTasks(projectId).forEach(task => {
+    if (expand) collapsedTaskIds.delete(task.id);
+    else collapsedTaskIds.add(task.id);
+  });
+  render();
+}
+
+function updateCollapseAllControl() {
+  const button = app.querySelector("[data-collapse-all]");
+  if (button) button.textContent = allProjectTasksCollapsed(currentProjectId) ? "Alles uitklappen" : "Alles inklappen";
+}
+
+function setTaskSortView(value) {
+  if (!["manual", "priority"].includes(value)) return;
+  if (typeof cancelTaskDrag === "function") cancelTaskDrag();
+  taskSortView = value;
+  render();
+}
 
 function esc(value = "") {
   return String(value).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;" }[c]));
@@ -95,17 +137,25 @@ function renderProject() {
     <div class="progress"><div style="width:${stats.percent}%"></div></div>
   </div>
   <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+    <div class="task-section-header">
       <h2>Taken</h2>
-      <button class="primary" onclick="openTaskDialog('${project.id}', null)">＋ Taak</button>
+      <div class="task-view-controls">
+        <button type="button" class="secondary small" data-collapse-all data-focus-key="collapse-all" onclick="toggleAllTaskDetails('${project.id}')" ${getCollapsibleTasks(project.id).length ? "" : "disabled"}>${allProjectTasksCollapsed(project.id) ? "Alles uitklappen" : "Alles inklappen"}</button>
+        <select class="secondary small" aria-label="Sorteerweergave" data-focus-key="task-sort-view" onchange="setTaskSortView(this.value)">
+          <option value="manual" ${taskSortView === "manual" ? "selected" : ""}>Handmatige volgorde</option>
+          <option value="priority" ${taskSortView === "priority" ? "selected" : ""}>Prioriteit: hoog → laag</option>
+        </select>
+      </div>
+      <button class="primary task-create-top" onclick="openTaskDialog('${project.id}', null)">＋ Taak</button>
     </div>
+    ${taskSortView === "priority" ? `<p class="muted small task-reorder-note">${TASK_REORDER_HINT}</p>` : ""}
     <div>${renderTaskTree(project.id, null)}</div>
     <div class="task-list-footer"><button class="secondary" type="button" data-focus-key="add-root-bottom-${project.id}" onclick="openTaskDialog('${project.id}', null)">＋ Taak toevoegen</button></div>
   </div>`;
 }
 
 function renderTaskTree(projectId, parentId) {
-  const tasks = getSiblingTasks(projectId, parentId);
+  const tasks = getTaskViewSiblings(projectId, parentId);
   if (!tasks.length) return `<p class="muted small">Nog geen taken.</p>`;
 
   return tasks.map((task, index) => {
@@ -116,7 +166,7 @@ function renderTaskTree(projectId, parentId) {
       <input type="checkbox" data-focus-key="task-${task.id}" aria-label="${esc(task.name)} voltooien" ${task.status === "completed" ? "checked" : ""} onchange="toggleTask('${task.id}', this.checked)">
       <div class="task-content">
         <div class="task-header" data-task-header="${task.id}">
-          <button class="task-action-icon task-drag-handle" type="button" data-focus-key="drag-${task.id}" data-task-id="${task.id}" ${tasks.length < 2 ? "disabled" : ""} title="Sleep om de volgorde te wijzigen" aria-label="${esc(task.name)} slepen; gebruik het actiemenu voor toetsenbordbediening" onpointerdown="startTaskDrag(this, event)" onpointermove="updateTaskDrag(event)" onpointerup="finishTaskDrag(event)" onpointercancel="cancelTaskDrag()" onlostpointercapture="cancelTaskDrag()">⠿</button>
+          <button class="task-action-icon task-drag-handle" type="button" data-focus-key="drag-${task.id}" data-task-id="${task.id}" ${tasks.length < 2 || taskSortView === "priority" ? "disabled" : ""} title="${taskSortView === "priority" ? TASK_REORDER_HINT : "Sleep om de volgorde te wijzigen"}" aria-label="${esc(task.name)} slepen; gebruik het actiemenu voor toetsenbordbediening" onpointerdown="startTaskDrag(this, event)" onpointermove="updateTaskDrag(event)" onpointerup="finishTaskDrag(event)" onpointercancel="cancelTaskDrag()" onlostpointercapture="cancelTaskDrag()">⠿</button>
           ${hasDetails ? `<button class="task-toggle" type="button" data-task-id="${task.id}" data-focus-key="collapse-${task.id}" aria-expanded="${!collapsedTaskIds.has(task.id)}" onclick="toggleTaskDetails(this)" title="Taak in- of uitklappen"><span aria-hidden="true">▶</span></button>` : `<span class="task-toggle-placeholder" aria-hidden="true"></span>`}
           <div class="task-name">
             <strong class="${task.status === "completed" ? "completed" : ""}">${esc(task.name)}</strong>
@@ -129,8 +179,8 @@ function renderTaskTree(projectId, parentId) {
             <button class="task-action-icon" type="button" id="task-menu-button-${task.id}" data-focus-key="menu-${task.id}" aria-haspopup="menu" aria-expanded="false" aria-controls="task-menu-${task.id}" onclick="toggleTaskMenu(this)" onkeydown="taskMenuTriggerKey(this, event)" title="Taakacties" aria-label="Acties voor ${esc(task.name)}">⋮</button>
             <div class="task-menu" id="task-menu-${task.id}" role="menu" aria-labelledby="task-menu-button-${task.id}" data-task-id="${task.id}" data-project-id="${projectId}" hidden>
               <button type="button" role="menuitem" tabindex="-1" data-focus-key="add-source-${task.id}" onclick="runTaskMenuAction(this, 'source')">Bron toevoegen</button>
-              <button type="button" role="menuitem" tabindex="-1" data-focus-key="move-up-${task.id}" ${index === 0 ? "disabled" : ""} onclick="runTaskMenuAction(this, 'up')">Omhoog</button>
-              <button type="button" role="menuitem" tabindex="-1" data-focus-key="move-down-${task.id}" ${index === tasks.length - 1 ? "disabled" : ""} onclick="runTaskMenuAction(this, 'down')">Omlaag</button>
+              <button type="button" role="menuitem" tabindex="-1" data-focus-key="move-up-${task.id}" ${index === 0 || taskSortView === "priority" ? "disabled" : ""} title="${taskSortView === "priority" ? TASK_REORDER_HINT : "Taak omhoog"}" onclick="runTaskMenuAction(this, 'up')">Omhoog</button>
+              <button type="button" role="menuitem" tabindex="-1" data-focus-key="move-down-${task.id}" ${index === tasks.length - 1 || taskSortView === "priority" ? "disabled" : ""} title="${taskSortView === "priority" ? TASK_REORDER_HINT : "Taak omlaag"}" onclick="runTaskMenuAction(this, 'down')">Omlaag</button>
               <button type="button" role="menuitem" tabindex="-1" class="task-menu-delete" data-focus-key="delete-task-${task.id}" onclick="runTaskMenuAction(this, 'delete')">Taak verwijderen</button>
             </div>
           </div>
@@ -157,6 +207,7 @@ function toggleTaskDetails(button) {
   const taskId = button.getAttribute("data-task-id");
   if (expanded) collapsedTaskIds.add(taskId);
   else collapsedTaskIds.delete(taskId);
+  updateCollapseAllControl();
 }
 
 
@@ -789,6 +840,7 @@ function toggleTask(id, checked) {
 }
 
 function moveTaskFromUi(id, direction) {
+  if (taskSortView !== "manual") return;
   try {
     if (moveTask(id, direction)) render();
   } catch (error) {
