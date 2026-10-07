@@ -88,3 +88,6 @@ form input,form textarea,form select { display:block; width:100%; margin-top:6px
 .status-dot-progress { background:#38bdf8; }
 .status-dot-neutral { background:#9ca3af; }
 .status-dot-none { background:#d1d5db; }
+
+.protocol-version-card { margin-top:10px; padding:10px; border:1px solid #e5e7eb; border-radius:10px; background:#fafafa; }
+.protocol-version-items { margin-top:8px; }
