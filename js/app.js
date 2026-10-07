@@ -120,8 +120,24 @@ function renderStatusChip(check) {
 function renderTaskCheckSummary(taskId) {
   const checks = getTaskChecks(taskId);
   if (!checks.length) return "";
-  const latest = checks[0];
-  return `<div class="muted small" style="margin-top:6px">${checks.length} controle${checks.length === 1 ? "" : "s"} · ${renderStatusChip(latest)}</div>`;
+
+  const rows = checks.map(check => {
+    const sourceVersion = getSourceVersion(check.sourceVersionId);
+    const source = sourceVersion ? getSource(sourceVersion.sourceId) : null;
+    const sourceLabel = source
+      ? `${esc(source.title)}${sourceVersion?.version ? ` v${esc(sourceVersion.version)}` : ""}`
+      : "Onbekende bron";
+
+    return `<div class="check-summary-row">
+      <span>${sourceLabel}</span>
+      ${renderStatusChip(check)}
+    </div>`;
+  }).join("");
+
+  return `<div class="check-summary" style="margin-top:6px">
+    <div class="muted small">${checks.length} controle${checks.length === 1 ? "" : "s"}</div>
+    ${rows}
+  </div>`;
 }
 
 function renderControlsDashboard() {
