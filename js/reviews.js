@@ -51,6 +51,10 @@ function updateReviewStatus({ reviewId, status, comment = "" }) {
   const allowed = ["pending", "approved", "rejected"];
   if (!allowed.includes(status)) throw new Error("Ongeldige reviewstatus.");
 
+  if (checkForReviewStatus(review) === "failed" && status === "approved") {
+    throw new Error("Een mislukte controle kan niet worden goedgekeurd. Corrigeer de bron en voer een nieuwe controle uit.");
+  }
+
   review.status = status;
   review.comment = comment.trim();
   saveState();
