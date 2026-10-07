@@ -304,8 +304,10 @@ function openCheckDialog(taskId, selectedSourceVersionId = null) {
   document.getElementById("checkTaskId").value = taskId;
 
   document.getElementById("checkProtocolId").innerHTML = protocols
-    .map(protocol => `<option value="${protocol.id}">${esc(protocol.name)} (v${esc(protocol.version)})</option>`)
+    .map(protocol => `<option value="${protocol.id}">${esc(protocol.name)}</option>`)
     .join("");
+
+  populateCheckProtocolVersions();
 
   document.getElementById("checkSourceVersionId").innerHTML = sourceVersions
     .map(({ source, version }) => `<option value="${version.id}">${esc(source.title)} — v${esc(version.version)}</option>`)
@@ -318,12 +320,30 @@ function openCheckDialog(taskId, selectedSourceVersionId = null) {
   document.getElementById("checkDialog").showModal();
 }
 
+function populateCheckProtocolVersions() {
+  const protocolId = document.getElementById("checkProtocolId").value;
+  const versions = getProtocolVersions(protocolId)
+    .filter(version => version.status === "active");
+
+  document.getElementById("checkProtocolVersionId").innerHTML = versions
+    .map(version => `<option value="${version.id}">v${esc(version.version)}</option>`)
+    .join("");
+
+  if (!versions.length) {
+    document.getElementById("checkProtocolVersionId").innerHTML =
+      `<option value="">Geen actieve versie beschikbaar</option>`;
+  }
+}
+
+document.getElementById("checkProtocolId").addEventListener("change", populateCheckProtocolVersions);
+
 document.getElementById("checkForm").addEventListener("submit", event => {
   event.preventDefault();
   try {
     const check = createCheck({
       taskId: document.getElementById("checkTaskId").value,
       protocolId: document.getElementById("checkProtocolId").value,
+      protocolVersionId: document.getElementById("checkProtocolVersionId").value,
       sourceVersionId: document.getElementById("checkSourceVersionId").value,
       summary: document.getElementById("checkSummary").value
     });
