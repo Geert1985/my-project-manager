@@ -79,12 +79,12 @@ function renderTaskTree(projectId, parentId) {
   return tasks.map(task => {
     const children = getChildren(task.id);
     const sources = getTaskSources(task.id);
-    return `<div class="task-row">
+    return `<div class="task-row task-status-${task.status}">
       <input type="checkbox" ${task.status === "completed" ? "checked" : ""} onchange="toggleTask('${task.id}', this.checked)">
       <div class="task-content">
         <div class="task-name ${task.status === "completed" ? "completed" : ""}">
           <strong>${esc(task.name)}</strong>
-          ${task.status === "in_progress" ? `<span class="muted small"> — Bezig</span>` : ""}
+          <span class="task-status-label small">${task.status === "completed" ? "Voltooid" : task.status === "in_progress" ? "Bezig" : "Niet gestart"}</span>
         </div>
         ${task.description ? `<div class="muted small">${esc(task.description)}</div>` : ""}
         <div class="task-actions">
@@ -258,8 +258,8 @@ function renderSourceVersion() {
 
 function renderTaskSources(sources) {
   return `<div class="source-list">${sources.map(source => {
-    const versions = getSourceVersions(source.id);
-    return `<div class="source-item">
+    const versions = [...getSourceVersions(source.id)].reverse();
+    return `<details class="source-item source-card">\n      <summary class="source-summary"><strong>Bron:</strong> ${esc(source.title)} <span class="badge">${esc(source.type)}</span> <span class="muted small">· ${versions.length} versie${versions.length === 1 ? "" : "s"}</span></summary>
       <div><strong>Bron:</strong> ${esc(source.title)} <span class="badge">${esc(source.type)}</span></div>
       ${source.author ? `<div class="muted small">Auteur: ${esc(source.author)}</div>` : ""}
       <div class="source-actions">
@@ -278,7 +278,7 @@ function renderTaskSources(sources) {
           <button class="secondary small" onclick="openCheckDialog('${source.taskId}', '${v.id}')">＋ Controle</button>
         </div>`;
       }).join("")}</div>` : ""}
-    </div>`;
+    </details>`;
   }).join("")}</div>`;
 }
 function openCheckDialog(taskId, selectedSourceVersionId = null) {
