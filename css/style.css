@@ -91,3 +91,13 @@ form input,form textarea,form select { display:block; width:100%; margin-top:6px
 
 .protocol-version-card { margin-top:10px; padding:10px; border:1px solid #e5e7eb; border-radius:10px; background:#fafafa; }
 .protocol-version-items { margin-top:8px; }
+
+/* v0.5 protocol overview */
+.protocol-card-header { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+.protocol-toggle { flex:1; min-width:0; display:flex; align-items:flex-start; gap:9px; padding:0; border:0; background:transparent; color:inherit; text-align:left; }
+.protocol-toggle-icon { margin-top:2px; font-size:.78rem; transition:transform .15s ease; }
+.protocol-toggle[aria-expanded="true"] .protocol-toggle-icon { transform:rotate(90deg); }
+.protocol-card-title { display:block; font-size:1.15rem; }
+.protocol-card-summary { display:block; margin-top:3px; }
+.protocol-card-body { margin-top:10px; }
+.protocol-card-body[hidden] { display:none; }
