@@ -156,6 +156,13 @@ function renderTaskCheckSummary(taskId) {
   </div>`;
 }
 
+let activeControlFilter = null;
+
+function setControlFilter(filter) {
+  activeControlFilter = activeControlFilter === filter ? null : filter;
+  renderControlsDashboard();
+}
+
 function renderControlsDashboard() {
   const checks = [...state.checks].sort((a,b) => b.createdAt.localeCompare(a.createdAt));
   const counts = { approved:0, pending:0, failed:0, completed:0 };
@@ -164,20 +171,31 @@ function renderControlsDashboard() {
     if (counts[key] !== undefined) counts[key]++;
   });
 
+  const visibleChecks = activeControlFilter
+    ? checks.filter(check => getCheckDisplayState(check).key === activeControlFilter)
+    : checks;
+  const filterLabels = {
+    approved: "Goedgekeurd",
+    pending: "Review in behandeling",
+    failed: "Controle mislukt",
+    completed: "Controle uitgevoerd"
+  };
+
   app.innerHTML = `
     <div class="card">
       <h2>Controle- en reviewdashboard</h2>
       <p class="muted">Overzicht van alle uitgevoerde controles, reviews en hun actuele status.</p>
       <div class="dashboard-grid">
-        <div class="dashboard-stat"><span>🟢 Goedgekeurd</span><strong>${counts.approved}</strong></div>
-        <div class="dashboard-stat"><span>🟠 Review in behandeling</span><strong>${counts.pending}</strong></div>
-        <div class="dashboard-stat"><span>🔴 Controle mislukt</span><strong>${counts.failed}</strong></div>
-        <div class="dashboard-stat"><span>🔵 Controle uitgevoerd</span><strong>${counts.completed}</strong></div>
+        <button class="dashboard-stat dashboard-filter ${activeControlFilter === "approved" ? "active" : ""}" type="button" aria-pressed="${activeControlFilter === "approved"}" onclick="setControlFilter('approved')"><span>🟢 Goedgekeurd</span><strong>${counts.approved}</strong></button>
+        <button class="dashboard-stat dashboard-filter ${activeControlFilter === "pending" ? "active" : ""}" type="button" aria-pressed="${activeControlFilter === "pending"}" onclick="setControlFilter('pending')"><span>🟠 Review in behandeling</span><strong>${counts.pending}</strong></button>
+        <button class="dashboard-stat dashboard-filter ${activeControlFilter === "failed" ? "active" : ""}" type="button" aria-pressed="${activeControlFilter === "failed"}" onclick="setControlFilter('failed')"><span>🔴 Controle mislukt</span><strong>${counts.failed}</strong></button>
+        <button class="dashboard-stat dashboard-filter ${activeControlFilter === "completed" ? "active" : ""}" type="button" aria-pressed="${activeControlFilter === "completed"}" onclick="setControlFilter('completed')"><span>🔵 Controle uitgevoerd</span><strong>${counts.completed}</strong></button>
       </div>
+      ${activeControlFilter ? `<div class="active-filter-note small">Filter actief: <strong>${filterLabels[activeControlFilter]}</strong> · klik opnieuw op dezelfde kaart om alle controles te tonen.</div>` : ""}
     </div>
     <div class="card">
-      <h2>Alle controles (${checks.length})</h2>
-      ${checks.length ? checks.map(renderControlDashboardRow).join("") : `<div class="empty">Nog geen controles uitgevoerd.</div>`}
+      <h2>${activeControlFilter ? filterLabels[activeControlFilter] : "Alle controles"} (${visibleChecks.length})</h2>
+      ${visibleChecks.length ? visibleChecks.map(renderControlDashboardRow).join("") : `<div class="empty">${activeControlFilter ? "Geen controles met deze status." : "Nog geen controles uitgevoerd."}</div>`}
     </div>
     <div class="card">
       <h2>Alle reviews (${state.reviews.length})</h2>
