@@ -18,6 +18,7 @@
   <nav class="bottom-nav" aria-label="Hoofdnavigatie">
     <button data-view="dashboard" class="nav-btn active">🏠<span>Home</span></button>
     <button data-view="tasks" class="nav-btn">📋<span>Taken</span></button>
+    <button data-view="protocols" class="nav-btn">✓<span>Protocollen</span></button>
   </nav>
 
   <dialog id="projectDialog">
@@ -99,7 +100,35 @@
   <script src="js/storage.js"></script>
   <script src="js/tasks.js"></script>
   <script src="js/projects.js"></script>
+  <dialog id="protocolDialog">
+    <form method="dialog" id="protocolForm">
+      <h2>Nieuw controleprotocol</h2>
+      <label>Naam<input id="protocolName" required maxlength="150"></label>
+      <label>Versie<input id="protocolVersion" required maxlength="50" value="1.0"></label>
+      <label>Beschrijving<textarea id="protocolDescription" rows="3"></textarea></label>
+      <div class="dialog-actions">
+        <button value="cancel">Annuleren</button>
+        <button value="default" class="primary">Protocol aanmaken</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="protocolItemDialog">
+    <form method="dialog" id="protocolItemForm">
+      <h2>Nieuw controlepunt</h2>
+      <input type="hidden" id="protocolItemProtocolId">
+      <label>Titel<input id="protocolItemTitle" required maxlength="200"></label>
+      <label>Beschrijving<textarea id="protocolItemDescription" rows="3"></textarea></label>
+      <label><input type="checkbox" id="protocolItemRequired" checked> Verplicht controlepunt</label>
+      <div class="dialog-actions">
+        <button value="cancel">Annuleren</button>
+        <button value="default" class="primary">Toevoegen</button>
+      </div>
+    </form>
+  </dialog>
+
   <script src="js/sources.js"></script>
+  <script src="js/protocols.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
