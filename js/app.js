@@ -79,24 +79,42 @@ function renderTaskTree(projectId, parentId) {
   return tasks.map(task => {
     const children = getChildren(task.id);
     const sources = getTaskSources(task.id);
+    const hasDetails = Boolean(task.description || sources.length || children.length);
     return `<div class="task-row task-status-${task.status}">
       <input type="checkbox" ${task.status === "completed" ? "checked" : ""} onchange="toggleTask('${task.id}', this.checked)">
       <div class="task-content">
-        <div class="task-name ${task.status === "completed" ? "completed" : ""}">
-          <strong>${esc(task.name)}</strong>
-          <span class="task-status-label small">${task.status === "completed" ? "Voltooid" : task.status === "in_progress" ? "Bezig" : "Niet gestart"}</span>
+        <div class="task-header">
+          ${hasDetails ? `<button class="task-toggle" type="button" aria-expanded="true" onclick="toggleTaskDetails(this)" title="Taak in- of uitklappen"><span aria-hidden="true">▶</span></button>` : `<span class="task-toggle-placeholder" aria-hidden="true"></span>`}
+          <div class="task-name ${task.status === "completed" ? "completed" : ""}">
+            <strong>${esc(task.name)}</strong>
+            <span class="task-status-label small">${task.status === "completed" ? "Voltooid" : task.status === "in_progress" ? "Bezig" : "Niet gestart"}</span>
+            ${children.length ? `<span class="muted small">${children.length} subtaak${children.length === 1 ? "" : "taken"}</span>` : ""}
+          </div>
         </div>
-        ${task.description ? `<div class="muted small">${esc(task.description)}</div>` : ""}
-        <div class="task-actions">
-          <button class="secondary small" onclick="openTaskDialog('${projectId}', '${task.id}')">＋ Subtaak</button>
-          <button class="secondary small" onclick="openSourceDialog('${projectId}', '${task.id}')">＋ Bron</button>
-          <button class="secondary small" onclick="removeTask('${task.id}')">Verwijder</button>
+        <div class="task-details">
+          ${task.description ? `<div class="muted small">${esc(task.description)}</div>` : ""}
+          <div class="task-actions">
+            <button class="secondary small" onclick="openTaskDialog('${projectId}', '${task.id}')">＋ Subtaak</button>
+            <button class="secondary small" onclick="openSourceDialog('${projectId}', '${task.id}')">＋ Bron</button>
+            <button class="secondary small" onclick="removeTask('${task.id}')">Verwijder</button>
+          </div>
+          ${sources.length ? renderTaskSources(sources) : ""}
+          ${children.length ? `<div class="children">${renderTaskTree(projectId, task.id)}</div>` : ""}
         </div>
-        ${sources.length ? renderTaskSources(sources) : ""}
-        ${children.length ? `<div class="children">${renderTaskTree(projectId, task.id)}</div>` : ""}
       </div>
     </div>`;
   }).join("");
+}
+
+
+function toggleTaskDetails(button) {
+  const taskContent = button.closest(".task-content");
+  const details = taskContent?.querySelector(":scope > .task-details");
+  if (!details) return;
+
+  const expanded = button.getAttribute("aria-expanded") === "true";
+  button.setAttribute("aria-expanded", String(!expanded));
+  details.hidden = expanded;
 }
 
 
