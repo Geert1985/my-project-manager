@@ -153,10 +153,28 @@
     </form>
   </dialog>
 
+  <dialog id="protocolVersionDialog">
+    <form method="dialog" id="protocolVersionForm">
+      <h2>Nieuwe protocolversie</h2>
+      <input type="hidden" id="protocolVersionProtocolId">
+      <label>Versie<input id="protocolVersionNewVersion" required maxlength="50" placeholder="Bijv. 2.0"></label>
+      <label>Beschrijving<textarea id="protocolVersionNewDescription" rows="3"></textarea></label>
+      <label>Kopieer controlepunten van
+        <select id="protocolVersionCopyFrom"></select>
+      </label>
+      <p class="muted small">De nieuwe versie wordt als draft aangemaakt. De gekozen versie wordt alleen gekopieerd; de bestaande versie blijft ongewijzigd.</p>
+      <div class="dialog-actions">
+        <button value="cancel">Annuleren</button>
+        <button value="default" class="primary">Versie aanmaken</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="protocolItemDialog">
     <form method="dialog" id="protocolItemForm">
       <h2>Nieuw controlepunt</h2>
       <input type="hidden" id="protocolItemProtocolId">
+      <input type="hidden" id="protocolItemVersionId">
       <label>Titel<input id="protocolItemTitle" required maxlength="200"></label>
       <label>Beschrijving<textarea id="protocolItemDescription" rows="3"></textarea></label>
       <label><input type="checkbox" id="protocolItemRequired" checked> Verplicht controlepunt</label>
