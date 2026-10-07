@@ -107,6 +107,19 @@
   <script src="js/storage.js"></script>
   <script src="js/tasks.js"></script>
   <script src="js/projects.js"></script>
+  <dialog id="reviewDialog">
+    <form method="dialog" id="reviewForm">
+      <h2>Nieuwe review</h2>
+      <input type="hidden" id="reviewCheckId">
+      <label>Reviewer<input id="reviewReviewer" required maxlength="150"></label>
+      <label>Commentaar<textarea id="reviewComment" rows="4"></textarea></label>
+      <div class="dialog-actions">
+        <button value="cancel">Annuleren</button>
+        <button value="default" class="primary">Review aanmaken</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="protocolDialog">
     <form method="dialog" id="protocolForm">
       <h2>Nieuw controleprotocol</h2>
@@ -155,6 +168,7 @@
   <script src="js/sources.js"></script>
   <script src="js/protocols.js"></script>
   <script src="js/checks.js"></script>
+  <script src="js/reviews.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
