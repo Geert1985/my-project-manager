@@ -2,7 +2,7 @@
 
 Een mobiele, generieke project- en checklistwebapp met controle- en reviewfunctionaliteit.
 
-## v0.7 — in ontwikkeling
+## v0.7
 
 - taken omhoog/omlaag verplaatsen binnen hetzelfde project en dezelfde parent
 - slepen met muis of touch via de sleephendel; pijlen en slepen gebruiken dezelfde reorderfunctie
@@ -17,7 +17,7 @@ Een mobiele, generieke project- en checklistwebapp met controle- en reviewfuncti
 - afzonderlijke projecten importeren/exporteren als stabiel JSON-formaat, inclusief optionele historische controles
 - taak toevoegen onderaan de hoofdtakenlijst en subtaak toevoegen onderaan iedere bestaande childlijst
 
-Zie `docs/v0.7-task-order.md` voor de testscope en handmatige acceptatiecheck.
+Zie `docs/v0.7-audit.md` voor de definitieve releasecontrole en testscope.
 
 ## v0.6
 
@@ -74,7 +74,7 @@ Voor GitHub Pages kan de repository rechtstreeks als statische website gepublice
 
 ## Versie
 
-De stabiele versie op `main` is **0.6**. Op `v0.7-task-order` wordt **0.7** ontwikkeld. De task-statusmatrix staat in `docs/task-status-matrix.md`.
+De stabiele release is **0.7**, gemarkeerd met tag `v0.7`. De task-statusmatrix staat in `docs/task-status-matrix.md`.
 
 ## Toekomst
 
