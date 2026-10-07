@@ -18,6 +18,7 @@ function createCheck({ taskId, sourceVersionId, protocolId, summary = "" }) {
     taskId,
     sourceVersionId,
     protocolId,
+    protocolVersion: protocol.version,
     status: "not_started",
     startedAt: null,
     completedAt: null,
