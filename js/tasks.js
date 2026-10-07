@@ -86,12 +86,28 @@ function reconcileTaskAndAncestors(task) {
   }
 }
 
+function completeDescendants(taskId) {
+  const children = getChildren(taskId);
+
+  for (const child of children) {
+    updateTaskState(child, "completed", "manual");
+    completeDescendants(child.id);
+  }
+}
+
 function setTaskCompleted(taskId, completed, mode = "manual") {
   const task = state.tasks.find(t => t.id === taskId);
   if (!task) return;
 
   if (completed) {
     updateTaskState(task, "completed", mode);
+
+    // A manual completion of a parent cascades to all descendants.
+    // Automatic completion does not need to do this because all children
+    // are already completed by definition.
+    if (mode === "manual") {
+      completeDescendants(task.id);
+    }
   } else {
     const children = getChildren(task.id);
     const someCompleted = children.some(child => child.status === "completed");
