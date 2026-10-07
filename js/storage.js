@@ -1,6 +1,7 @@
 const STORAGE_KEY = "my-project-manager-v0.1";
 
 const defaultState = {
+  schemaVersion: 4,
   projects: [],
   tasks: [],
   sources: [],
