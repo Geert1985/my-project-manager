@@ -10,7 +10,14 @@
 <body>
   <header class="topbar">
     <h1>My Projects</h1>
-    <button id="newProjectBtn" class="primary">＋ Project</button>
+    <div class="topbar-actions">
+      <nav class="top-nav" aria-label="Hoofdnavigatie">
+        <button data-view="dashboard" class="nav-btn active">🏠 Home</button>
+        <button data-view="tasks" class="nav-btn">📋 Taken</button>
+        <button data-view="protocols" class="nav-btn">✓ Protocollen</button>
+      </nav>
+      <button id="newProjectBtn" class="primary">＋ Project</button>
+    </div>
   </header>
 
   <main id="app" class="container"></main>
