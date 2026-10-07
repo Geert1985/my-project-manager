@@ -13,12 +13,16 @@ function createCheck({ taskId, sourceVersionId, protocolId, summary = "" }) {
   const protocol = getProtocol(protocolId);
   if (!protocol) throw new Error("Protocol bestaat niet.");
 
+  const protocolVersion = getActiveProtocolVersion(protocolId);
+  if (!protocolVersion) throw new Error("Het protocol heeft geen actieve versie.");
+
   const check = {
     id: crypto.randomUUID(),
     taskId,
     sourceVersionId,
     protocolId,
-    protocolVersion: protocol.version,
+    protocolVersionId: protocolVersion.id,
+    protocolVersion: protocolVersion.version,
     status: "not_started",
     startedAt: null,
     completedAt: null,
@@ -28,7 +32,7 @@ function createCheck({ taskId, sourceVersionId, protocolId, summary = "" }) {
 
   state.checks.push(check);
 
-  for (const item of getProtocolItems(protocolId)) {
+  for (const item of getProtocolItemsForVersion(protocolVersion.id)) {
     state.checkResults.push({
       id: crypto.randomUUID(),
       checkId: check.id,
@@ -97,7 +101,9 @@ function reconcileCheck(checkId) {
   const check = getCheck(checkId);
   if (!check) return null;
 
-  const protocolItems = getProtocolItems(check.protocolId);
+  const protocolItems = check.protocolVersionId
+    ? getProtocolItemsForVersion(check.protocolVersionId)
+    : getProtocolItems(check.protocolId);
   const results = getCheckResults(check.id);
   const byItem = new Map(results.map(result => [result.protocolItemId, result]));
 
