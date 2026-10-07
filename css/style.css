@@ -101,3 +101,12 @@ form input,form textarea,form select { display:block; width:100%; margin-top:6px
 .protocol-card-summary { display:block; margin-top:3px; }
 .protocol-card-body { margin-top:10px; }
 .protocol-card-body[hidden] { display:none; }
+
+/* v0.5 source overview */
+.source-card { padding:0; overflow:hidden; }
+.source-summary { display:flex; align-items:center; gap:6px; padding:9px 10px; cursor:pointer; list-style:none; }
+.source-summary::-webkit-details-marker { display:none; }
+.source-summary::before { content:"▶"; font-size:.72rem; transition:transform .15s ease; }
+.source-card[open] > .source-summary::before { transform:rotate(90deg); }
+.source-card[open] > :not(summary) { margin-left:10px; margin-right:10px; }
+.source-card[open] > .source-versions { margin-left:18px; }
