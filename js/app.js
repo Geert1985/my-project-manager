@@ -31,9 +31,10 @@ function restoreAppFocus(key) {
   if (!key) return;
   const target = [...app.querySelectorAll("[data-focus-key]")]
     .find(element => element.getAttribute("data-focus-key") === key);
-  const fallback = [...app.querySelectorAll("button, input, [tabindex]")]
-    .find(element => element.getClientRects().length);
-  (target?.getClientRects().length ? target : fallback)?.focus({ preventScroll: true });
+  const fallback = target?.closest(".task-row")?.querySelector("input[type=checkbox]")
+    || [...app.querySelectorAll("button, input, [tabindex]")]
+      .find(element => !element.disabled && element.getClientRects().length);
+  (target && !target.disabled && target.getClientRects().length ? target : fallback)?.focus({ preventScroll: true });
 }
 
 function rememberDialogFocus() {
@@ -96,10 +97,10 @@ function renderProject() {
 }
 
 function renderTaskTree(projectId, parentId) {
-  const tasks = getProjectTasks(projectId).filter(t => t.parentId === parentId);
+  const tasks = getSiblingTasks(projectId, parentId);
   if (!tasks.length) return `<p class="muted small">Nog geen taken.</p>`;
 
-  return tasks.map(task => {
+  return tasks.map((task, index) => {
     const children = getChildren(task.id);
     const sources = getTaskSources(task.id);
     const hasDetails = Boolean(task.description || sources.length || children.length);
@@ -115,6 +116,8 @@ function renderTaskTree(projectId, parentId) {
             ${sources.length ? `<span class="muted small">${sources.length} bron${sources.length === 1 ? "" : "nen"}</span>` : ""}
           </div>
           <div class="task-actions task-actions-compact" aria-label="Taakacties">
+            <button class="task-action-icon" type="button" data-focus-key="move-up-${task.id}" onclick="moveTaskFromUi('${task.id}', 'up')" ${index === 0 ? "disabled" : ""} title="Taak omhoog" aria-label="${esc(task.name)} omhoog">↑</button>
+            <button class="task-action-icon" type="button" data-focus-key="move-down-${task.id}" onclick="moveTaskFromUi('${task.id}', 'down')" ${index === tasks.length - 1 ? "disabled" : ""} title="Taak omlaag" aria-label="${esc(task.name)} omlaag">↓</button>
             <button class="task-action-icon" type="button" data-focus-key="add-task-${task.id}" onclick="openTaskDialog('${projectId}', '${task.id}')" title="Subtaak toevoegen" aria-label="Subtaak toevoegen">＋</button>
             <button class="task-action-icon" type="button" data-focus-key="add-source-${task.id}" onclick="openSourceDialog('${projectId}', '${task.id}')" title="Bron toevoegen" aria-label="Bron toevoegen">🔗</button>
             <button class="task-action-icon task-action-delete" type="button" data-focus-key="delete-task-${task.id}" onclick="removeTask('${task.id}')" title="Taak verwijderen" aria-label="Taak verwijderen">🗑</button>
@@ -549,7 +552,8 @@ function returnFromCheck() {
 }
 
 function renderAllTasks() {
-  const open = state.tasks.filter(t => t.status !== "completed");
+  const open = state.projects.flatMap(project => getProjectTasksInTreeOrder(project.id))
+    .filter(task => task.status !== "completed");
   app.innerHTML = `<div class="card"><h2>Alle openstaande taken</h2>
     ${open.length ? open.map(t => `<div class="task-row">
       <input type="checkbox" data-focus-key="task-${t.id}" aria-label="${esc(t.name)} voltooien" onchange="toggleTask('${t.id}', this.checked)">
@@ -748,6 +752,14 @@ document.getElementById("protocolItemForm").addEventListener("submit", event => 
 function toggleTask(id, checked) {
   setTaskCompleted(id, checked, "manual");
   render();
+}
+
+function moveTaskFromUi(id, direction) {
+  try {
+    if (moveTask(id, direction)) render();
+  } catch (error) {
+    alert(error.message);
+  }
 }
 
 function removeTask(id) {

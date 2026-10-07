@@ -2,6 +2,17 @@
 
 Een mobiele, generieke project- en checklistwebapp met controle- en reviewfunctionaliteit.
 
+## v0.7 — in ontwikkeling
+
+- taken omhoog/omlaag verplaatsen binnen hetzelfde project en dezelfde parent
+- een parent verplaatsen neemt de volledige subtaakboom mee
+- nieuwe taken verschijnen achteraan binnen hun eigen niveau
+- volgorde blijft bewaard na herladen
+- migratie naar schemaVersion 5 bewaart de bestaande volgorde en historische gegevens
+- compacte knoppen met toetsenbordbediening en begrenzing aan begin/einde
+
+Zie `docs/v0.7-task-order.md` voor de testscope en handmatige acceptatiecheck.
+
 ## v0.6
 
 - inklapbare taken en subtaken met status en aantallen
@@ -57,11 +68,11 @@ Voor GitHub Pages kan de repository rechtstreeks als statische website gepublice
 
 ## Versie
 
-De releasekandidaat op `v0.6-ux` is **0.6**. De task-statusmatrix staat in `docs/task-status-matrix.md`.
+De stabiele versie op `main` is **0.6**. Op `v0.7-task-order` wordt **0.7** ontwikkeld. De task-statusmatrix staat in `docs/task-status-matrix.md`.
 
 ## Toekomst
 
-Voor v0.7 is handmatig wijzigen van de taakvolgorde voorzien. Een uitgebreidere projectmanager met planning en Gantt wordt een afzonderlijk project.
+Na v0.7 beoordelen we of de checklistapp functioneel af is. Een uitgebreidere projectmanager met planning en Gantt wordt een afzonderlijk project.
 
 ## Verwijderen en historische integriteit
 
@@ -69,8 +80,8 @@ Een bron met gekoppelde controles kan niet worden verwijderd. Een taakboom of pr
 
 ## Tests
 
-Met Node.js 22 of nieuwer: `node tests/release.cjs`.
+Met Node.js 22 of nieuwer: `node tests/release.cjs` en `node tests/task-order.cjs`.
 
 De browserregressietest gebruikt Playwright en een geïnstalleerde Microsoft Edge: `node tests/browser.cjs`. Installeer Playwright in je testomgeving of zet `PLAYWRIGHT_MODULE` naar het beschikbare Playwright-modulepad. De test gebruikt een tijdelijk browserprofiel; bestaande browserdata worden niet gebruikt.
 
-Zie `docs/v0.6-audit.md` voor de releasecontrole. Opslag blijft schemaVersion 4 onder de bestaande localStorage-key; wijzig die key niet bij een release.
+Zie `docs/v0.6-audit.md` voor de v0.6-releasecontrole en `docs/v0.7-task-order.md` voor v0.7. Opslag migreert in v0.7 naar schemaVersion 5 onder de bestaande localStorage-key; wijzig die key niet bij een release.

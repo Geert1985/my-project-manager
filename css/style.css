@@ -156,7 +156,9 @@ button:disabled { cursor:not-allowed; opacity:.55; }
 .task-header .task-name { flex:1 1 auto; min-width:0; }
 .task-actions-compact {
   display:flex;
-  flex:0 0 auto;
+  flex:0 1 auto;
+  max-width:100%;
+  min-width:0;
   gap:4px;
   margin-left:auto;
 }

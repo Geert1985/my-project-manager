@@ -11,7 +11,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     page.on('dialog', dialog => dialog.accept());
-    await page.goto(pathToFileURL(path.join(__dirname, '../index.html')).href);
+    await page.goto(process.env.PREVIEW_URL || pathToFileURL(path.join(__dirname, '../index.html')).href);
     const ids = await page.evaluate(() => {
       const project = createProject({ name: 'Browser audit' });
       const parent = createTask({ projectId: project.id, name: 'Parent ' + 'Lang'.repeat(30) });
@@ -56,6 +56,31 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 
     await parentToggle.click();
     const sourceCard = page.locator(`[data-source-id="${ids.source}"]`);
+    await sourceCard.locator('summary').click();
+    // Move a parent with its subtree and preserve its collapsed state.
+    await parentToggle.click();
+    const down = page.locator(`[data-focus-key="move-down-${ids.parent}"]`);
+    await down.focus();
+    await page.keyboard.press('Enter');
+    assert.equal(await parentToggle.getAttribute('aria-expanded'), 'false');
+    assert.equal(await down.evaluate(element => element === document.activeElement), true);
+    assert.equal(await page.evaluate(ids => getSiblingTasks(ids.project)[1].id, ids), ids.parent);
+    const up = page.locator(`[data-focus-key="move-up-${ids.parent}"]`);
+    await up.click();
+    assert.equal(await up.isDisabled(), true);
+    assert.equal(await checkbox.evaluate(element => element === document.activeElement), true);
+    await parentToggle.click();
+    const leafDown = page.locator(`[data-focus-key="move-down-${ids.leaf}"]`);
+    assert.equal(await leafDown.isDisabled(), true);
+    const extraChild = await page.evaluate(ids => {
+      const extra = createTask({projectId:ids.project,parentId:ids.child,name:'Order sibling'});
+      render(); return extra.id;
+    }, ids);
+    await leafDown.click();
+    assert.deepEqual(await page.evaluate(ids => getChildren(ids.child).map(t=>t.id), ids), [extraChild, ids.leaf]);
+    await page.reload();
+    await page.evaluate(ids => openProject(ids.project), ids);
+    assert.deepEqual(await page.evaluate(ids => getChildren(ids.child).map(t=>t.id), ids), [extraChild, ids.leaf]);
     await sourceCard.locator('summary').click();
     const addVersion = page.locator(`[data-focus-key="add-version-${ids.source}"]`);
     await addVersion.click();
