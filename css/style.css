@@ -188,6 +188,12 @@ button:disabled { cursor:not-allowed; opacity:.55; }
 .task-drag-handle.dragging { cursor:grabbing; background:#dbeafe; border-color:#2563eb; }
 .task-header.task-drop-before { box-shadow:0 -3px 0 #2563eb; }
 .task-header.task-drop-after { box-shadow:0 3px 0 #2563eb; }
+.task-header > .task-drag-handle { flex:0 0 30px; }
+.task-menu { position:fixed; z-index:40; width:200px; max-width:calc(100vw - 16px); max-height:calc(100vh - 16px); overflow:auto; padding:5px; background:white; border:1px solid #d1d5db; border-radius:9px; box-shadow:0 6px 24px rgba(0,0,0,.18); }
+.task-menu[hidden] { display:none; }
+.task-menu button { display:block; width:100%; min-height:40px; padding:8px 10px; text-align:left; border:0; border-radius:5px; background:white; }
+.task-menu button:hover, .task-menu button:focus-visible { background:#f3f4f6; }
+.task-menu .task-menu-delete { color:#b91c1c; border-top:1px solid #e5e7eb; }
 @media (max-width:600px) {
   .task-header { flex-wrap:wrap; }
 }

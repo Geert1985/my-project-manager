@@ -10,6 +10,7 @@ function esc(value = "") {
 }
 
 function render() {
+  if (typeof closeTaskMenu === "function") closeTaskMenu(true);
   const focusKey = document.activeElement?.getAttribute("data-focus-key") || dialogReturnFocusKey;
   const openSourceIds = new Set([...app.querySelectorAll("details[data-source-id][open]")]
     .map(element => element.getAttribute("data-source-id")));
@@ -29,8 +30,10 @@ function render() {
 
 function restoreAppFocus(key) {
   if (!key) return;
+  const focusKeys = [key];
+  if (key.startsWith("add-task-")) focusKeys.push(key.replace("add-task-", "add-child-bottom-"));
   const target = [...app.querySelectorAll("[data-focus-key]")]
-    .find(element => element.getAttribute("data-focus-key") === key);
+    .find(element => focusKeys.includes(element.getAttribute("data-focus-key")));
   const fallback = target?.closest(".task-row")?.querySelector("input[type=checkbox]")
     || [...app.querySelectorAll("button, input, [tabindex]")]
       .find(element => !element.disabled && element.getClientRects().length);
@@ -109,6 +112,7 @@ function renderTaskTree(projectId, parentId) {
       <input type="checkbox" data-focus-key="task-${task.id}" aria-label="${esc(task.name)} voltooien" ${task.status === "completed" ? "checked" : ""} onchange="toggleTask('${task.id}', this.checked)">
       <div class="task-content">
         <div class="task-header" data-task-header="${task.id}">
+          <button class="task-action-icon task-drag-handle" type="button" data-focus-key="drag-${task.id}" data-task-id="${task.id}" ${tasks.length < 2 ? "disabled" : ""} title="Sleep om de volgorde te wijzigen" aria-label="${esc(task.name)} slepen; gebruik het actiemenu voor toetsenbordbediening" onpointerdown="startTaskDrag(this, event)" onpointermove="updateTaskDrag(event)" onpointerup="finishTaskDrag(event)" onpointercancel="cancelTaskDrag()" onlostpointercapture="cancelTaskDrag()">⠿</button>
           ${hasDetails ? `<button class="task-toggle" type="button" data-task-id="${task.id}" data-focus-key="collapse-${task.id}" aria-expanded="${!collapsedTaskIds.has(task.id)}" onclick="toggleTaskDetails(this)" title="Taak in- of uitklappen"><span aria-hidden="true">▶</span></button>` : `<span class="task-toggle-placeholder" aria-hidden="true"></span>`}
           <div class="task-name">
             <strong class="${task.status === "completed" ? "completed" : ""}">${esc(task.name)}</strong>
@@ -117,12 +121,14 @@ function renderTaskTree(projectId, parentId) {
             ${sources.length ? `<span class="muted small">${sources.length} bron${sources.length === 1 ? "" : "nen"}</span>` : ""}
           </div>
           <div class="task-actions task-actions-compact" aria-label="Taakacties">
-            <button class="task-action-icon task-drag-handle" type="button" data-focus-key="drag-${task.id}" data-task-id="${task.id}" ${tasks.length < 2 ? "disabled" : ""} title="Sleep om de volgorde te wijzigen" aria-label="${esc(task.name)} slepen; gebruik de pijlen voor toetsenbordbediening" onpointerdown="startTaskDrag(this, event)" onpointermove="updateTaskDrag(event)" onpointerup="finishTaskDrag(event)" onpointercancel="cancelTaskDrag()" onlostpointercapture="cancelTaskDrag()">⠿</button>
-            <button class="task-action-icon" type="button" data-focus-key="move-up-${task.id}" onclick="moveTaskFromUi('${task.id}', 'up')" ${index === 0 ? "disabled" : ""} title="Taak omhoog" aria-label="${esc(task.name)} omhoog">↑</button>
-            <button class="task-action-icon" type="button" data-focus-key="move-down-${task.id}" onclick="moveTaskFromUi('${task.id}', 'down')" ${index === tasks.length - 1 ? "disabled" : ""} title="Taak omlaag" aria-label="${esc(task.name)} omlaag">↓</button>
-            <button class="task-action-icon" type="button" data-focus-key="add-task-${task.id}" onclick="openTaskDialog('${projectId}', '${task.id}')" title="Subtaak toevoegen" aria-label="Subtaak toevoegen">＋</button>
-            <button class="task-action-icon" type="button" data-focus-key="add-source-${task.id}" onclick="openSourceDialog('${projectId}', '${task.id}')" title="Bron toevoegen" aria-label="Bron toevoegen">🔗</button>
-            <button class="task-action-icon task-action-delete" type="button" data-focus-key="delete-task-${task.id}" onclick="removeTask('${task.id}')" title="Taak verwijderen" aria-label="Taak verwijderen">🗑</button>
+            ${!children.length ? `<button class="task-action-icon" type="button" data-focus-key="add-task-${task.id}" onclick="openTaskDialog('${projectId}', '${task.id}')" title="Eerste subtaak toevoegen" aria-label="Eerste subtaak toevoegen">＋</button>` : ""}
+            <button class="task-action-icon" type="button" id="task-menu-button-${task.id}" data-focus-key="menu-${task.id}" aria-haspopup="menu" aria-expanded="false" aria-controls="task-menu-${task.id}" onclick="toggleTaskMenu(this)" onkeydown="taskMenuTriggerKey(this, event)" title="Taakacties" aria-label="Acties voor ${esc(task.name)}">⋮</button>
+            <div class="task-menu" id="task-menu-${task.id}" role="menu" aria-labelledby="task-menu-button-${task.id}" data-task-id="${task.id}" data-project-id="${projectId}" hidden>
+              <button type="button" role="menuitem" tabindex="-1" data-focus-key="add-source-${task.id}" onclick="runTaskMenuAction(this, 'source')">Bron toevoegen</button>
+              <button type="button" role="menuitem" tabindex="-1" data-focus-key="move-up-${task.id}" ${index === 0 ? "disabled" : ""} onclick="runTaskMenuAction(this, 'up')">Omhoog</button>
+              <button type="button" role="menuitem" tabindex="-1" data-focus-key="move-down-${task.id}" ${index === tasks.length - 1 ? "disabled" : ""} onclick="runTaskMenuAction(this, 'down')">Omlaag</button>
+              <button type="button" role="menuitem" tabindex="-1" class="task-menu-delete" data-focus-key="delete-task-${task.id}" onclick="runTaskMenuAction(this, 'delete')">Taak verwijderen</button>
+            </div>
           </div>
         </div>
         <div class="task-details" ${collapsedTaskIds.has(task.id) ? "hidden" : ""}>

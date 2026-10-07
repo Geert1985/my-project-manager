@@ -8,6 +8,10 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
   try {
     const context = await browser.newContext({ viewport:{width:375,height:900}, hasTouch:true });
     const page = await context.newPage();
+    async function menuAction(id, action) {
+      await page.locator(`[data-focus-key="menu-${id}"]`).click();
+      await page.locator(`[data-focus-key="${action}-${id}"]`).click();
+    }
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(process.env.PREVIEW_URL || pathToFileURL(path.join(__dirname,'../index.html')).href);
@@ -45,10 +49,10 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     assert.equal(await handle(ids.roots[2]).evaluate(el=>el===document.activeElement),true);
 
     // Arrow and mouse drop both reach the same reorderTask function.
-    await page.locator(`[data-focus-key="move-down-${ids.roots[2]}"]`).click();
+    await menuAction(ids.roots[2], 'move-down');
     assert.equal(await page.evaluate(()=>window.reorderCalls),2);
     assert.deepEqual(await order(),[ids.roots[0],ids.roots[2],ids.roots[1]]);
-    await page.locator(`[data-focus-key="move-down-${ids.roots[2]}"]`).click();
+    await menuAction(ids.roots[2], 'move-down');
     assert.deepEqual(await order(),ids.roots);
     await mouseStart(ids.roots[0]);await mouseTarget(ids.roots[2],'after');await page.mouse.up();
     assert.deepEqual(await order(),[ids.roots[1],ids.roots[2],ids.roots[0]]);

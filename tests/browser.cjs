@@ -8,6 +8,10 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
   const browser = await chromium.launch({ headless: true, channel: 'msedge' });
   try {
     const page = await browser.newPage();
+    async function menuAction(id, action) {
+      await page.locator(`[data-focus-key="menu-${id}"]`).click();
+      await page.locator(`[data-focus-key="${action}-${id}"]`).click();
+    }
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     page.on('dialog', dialog => dialog.accept());
@@ -44,31 +48,30 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     await childToggle.click();
     assert.match(await page.locator('.task-name').first().innerText(), /2 subtaken/);
 
-    // Adding a task keeps the collapsed parent and returns focus to its action.
-    await parentToggle.click();
-    const addTask = page.locator(`[data-focus-key="add-task-${ids.parent}"]`);
+    // Adding another child uses its footer and restores focus.
+    const addTask = page.locator(`[data-focus-key="add-child-bottom-${ids.parent}"]`);
     await addTask.click();
     await page.locator('#taskName').fill('Added from dialog');
     await page.locator('#taskForm button[value="default"]').click();
-    assert.equal(await parentToggle.getAttribute('aria-expanded'), 'false');
+    assert.equal(await parentToggle.getAttribute('aria-expanded'), 'true');
     assert.equal(await addTask.evaluate(element => element === document.activeElement), true);
     assert.match(await page.locator('.task-name').first().innerText(), /3 subtaken/);
 
-    await parentToggle.click();
     const sourceCard = page.locator(`[data-source-id="${ids.source}"]`);
     await sourceCard.locator('summary').click();
     // Move a parent with its subtree and preserve its collapsed state.
     await parentToggle.click();
     const down = page.locator(`[data-focus-key="move-down-${ids.parent}"]`);
+    await page.locator(`[data-focus-key="menu-${ids.parent}"]`).click();
     await down.focus();
     await page.keyboard.press('Enter');
     assert.equal(await parentToggle.getAttribute('aria-expanded'), 'false');
-    assert.equal(await down.evaluate(element => element === document.activeElement), true);
+    assert.equal(await page.locator(`[data-focus-key="menu-${ids.parent}"]`).evaluate(element => element === document.activeElement), true);
     assert.equal(await page.evaluate(ids => getSiblingTasks(ids.project)[1].id, ids), ids.parent);
     const up = page.locator(`[data-focus-key="move-up-${ids.parent}"]`);
-    await up.click();
+    await menuAction(ids.parent, 'move-up');
     assert.equal(await up.isDisabled(), true);
-    assert.equal(await checkbox.evaluate(element => element === document.activeElement), true);
+    assert.equal(await page.locator(`[data-focus-key="menu-${ids.parent}"]`).evaluate(element => element === document.activeElement), true);
     await parentToggle.click();
     const leafDown = page.locator(`[data-focus-key="move-down-${ids.leaf}"]`);
     assert.equal(await leafDown.isDisabled(), true);
@@ -76,7 +79,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       const extra = createTask({projectId:ids.project,parentId:ids.child,name:'Order sibling'});
       render(); return extra.id;
     }, ids);
-    await leafDown.click();
+    await menuAction(ids.leaf, 'move-down');
     assert.deepEqual(await page.evaluate(ids => getChildren(ids.child).map(t=>t.id), ids), [extraChild, ids.leaf]);
     await page.reload();
     await page.evaluate(ids => openProject(ids.project), ids);
@@ -110,7 +113,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       await page.setViewportSize({width,height:900});
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
     }
-    await page.locator(`[data-focus-key="move-up-${rootAdded}"]`).click();
+    await menuAction(rootAdded, 'move-up');
     await page.reload();await page.evaluate(ids=>openProject(ids.project),ids);
     assert.equal(await page.evaluate(ids=>getSiblingTasks(ids.project).at(-2).id,ids),rootAdded);
     assert.equal(await page.evaluate(ids=>getChildren(ids.parent).at(-1).id,ids),childAdded);
@@ -132,7 +135,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
         protocolId: protocol.id, protocolVersionId: getActiveProtocolVersion(protocol.id).id });
       return JSON.stringify(state);
     }, ids);
-    await page.locator(`[data-focus-key="delete-task-${ids.parent}"]`).click();
+    await menuAction(ids.parent, 'delete-task');
     assert.equal(await page.evaluate(() => JSON.stringify(state)), snapshot);
     await page.locator(`[data-focus-key="delete-source-${ids.source}"]`).click();
     assert.equal(await page.evaluate(() => JSON.stringify(state)), snapshot);
