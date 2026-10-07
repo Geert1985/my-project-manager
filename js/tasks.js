@@ -11,7 +11,16 @@ function createTask({ projectId, parentId = null, name, description = "", priori
     createdAt: new Date().toISOString(),
     completedAt: null
   };
+
   state.tasks.push(task);
+
+  // A newly added child may change the state of an automatically
+  // completed parent. Manual parent completion is preserved.
+  if (parentId) {
+    const parent = state.tasks.find(t => t.id === parentId);
+    if (parent) reconcileTaskAndAncestors(parent);
+  }
+
   saveState();
   return task;
 }
@@ -35,38 +44,44 @@ function updateTaskState(task, status, completionMode) {
   }
 }
 
-/*
- * Re-evaluate parents after a child changed.
- *
- * Important: a manually completed parent is deliberately preserved.
- * This prevents a later child change from unexpectedly reopening a
- * parent that the user explicitly marked as completed.
- */
-function reconcileAncestors(task) {
+function reconcileTask(task) {
+  const children = getChildren(task.id);
+  if (!children.length) return;
+
+  const allCompleted = children.every(child => child.status === "completed");
+  const someCompleted = children.some(child => child.status === "completed");
+
+  if (allCompleted) {
+    // Preserve an explicit manual completion.
+    if (!(task.status === "completed" && task.completionMode === "manual")) {
+      updateTaskState(task, "completed", "automatic");
+    }
+    return;
+  }
+
+  // Only automatically completed parents are automatically reopened.
+  if (task.status === "completed" && task.completionMode === "automatic") {
+    updateTaskState(task, someCompleted ? "in_progress" : "not_started", "automatic");
+    return;
+  }
+
+  // A non-completed parent reflects child progress.
+  if (task.status !== "completed") {
+    task.status = someCompleted ? "in_progress" : "not_started";
+    task.completedAt = null;
+  }
+}
+
+function reconcileTaskAndAncestors(task) {
+  reconcileTask(task);
+
   let parentId = task.parentId;
 
   while (parentId) {
     const parent = state.tasks.find(t => t.id === parentId);
     if (!parent) break;
 
-    const children = getChildren(parent.id);
-
-    if (children.length > 0) {
-      const allCompleted = children.every(child => child.status === "completed");
-      const someCompleted = children.some(child => child.status === "completed");
-
-      if (allCompleted) {
-        if (!(parent.status === "completed" && parent.completionMode === "manual")) {
-          updateTaskState(parent, "completed", "automatic");
-        }
-      } else if (parent.status === "completed" && parent.completionMode === "automatic") {
-        updateTaskState(parent, someCompleted ? "in_progress" : "not_started", "automatic");
-      } else if (parent.status !== "completed") {
-        parent.status = someCompleted ? "in_progress" : "not_started";
-        parent.completedAt = null;
-      }
-    }
-
+    reconcileTask(parent);
     parentId = parent.parentId;
   }
 }
@@ -83,8 +98,7 @@ function setTaskCompleted(taskId, completed, mode = "manual") {
     updateTaskState(task, someCompleted ? "in_progress" : "not_started", mode);
   }
 
-  // A direct user action is saved first. Ancestors are then reconciled.
-  reconcileAncestors(task);
+  reconcileTaskAndAncestors(task);
   saveState();
 }
 
@@ -94,6 +108,7 @@ function deleteTask(taskId) {
 
   const ids = new Set([taskId]);
   let changed = true;
+
   while (changed) {
     changed = false;
     for (const current of state.tasks) {
@@ -106,9 +121,10 @@ function deleteTask(taskId) {
 
   state.tasks = state.tasks.filter(t => !ids.has(t.id));
 
+  // Recalculate the parent itself after deleting its child.
   if (parentId) {
     const parent = state.tasks.find(t => t.id === parentId);
-    if (parent) reconcileAncestors(parent);
+    if (parent) reconcileTaskAndAncestors(parent);
   }
 
   saveState();
