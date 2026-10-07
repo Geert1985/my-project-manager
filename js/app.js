@@ -512,7 +512,10 @@ function renderProtocolCard(protocol) {
       </div>
 
       <div class="protocol-items">
-        <h3>Versies (${versions.length})</h3>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <h3>Versies (${versions.length})</h3>
+          <button class="secondary small" onclick="openProtocolVersionDialog('${protocol.id}')">＋ Nieuwe versie</button>
+        </div>
         ${versions.length ? versions.map(version => {
           const items = getProtocolItemsForVersion(version.id);
           const used = state.checks.some(check => check.protocolVersionId === version.id);
@@ -568,9 +571,43 @@ document.getElementById("protocolForm").addEventListener("submit", event => {
   }
 });
 
-function openProtocolItemDialog(protocolId) {
+function openProtocolVersionDialog(protocolId) {
+  const protocol = getProtocol(protocolId);
+  if (!protocol) return;
+
+  document.getElementById("protocolVersionForm").reset();
+  document.getElementById("protocolVersionProtocolId").value = protocolId;
+
+  const versions = getProtocolVersions(protocolId);
+  document.getElementById("protocolVersionCopyFrom").innerHTML =
+    `<option value="">Lege versie</option>` +
+    versions.map(version =>
+      `<option value="${version.id}">v${esc(version.version)} (${esc(version.status)})</option>`
+    ).join("");
+
+  document.getElementById("protocolVersionDialog").showModal();
+}
+
+document.getElementById("protocolVersionForm").addEventListener("submit", event => {
+  event.preventDefault();
+  try {
+    createProtocolVersion({
+      protocolId: document.getElementById("protocolVersionProtocolId").value,
+      version: document.getElementById("protocolVersionNewVersion").value,
+      description: document.getElementById("protocolVersionNewDescription").value,
+      copyFromVersionId: document.getElementById("protocolVersionCopyFrom").value || null
+    });
+    document.getElementById("protocolVersionDialog").close();
+    render();
+  } catch (error) {
+    alert(error.message);
+  }
+});
+
+function openProtocolItemDialog(protocolId, protocolVersionId = null) {
   document.getElementById("protocolItemForm").reset();
   document.getElementById("protocolItemProtocolId").value = protocolId;
+  document.getElementById("protocolItemVersionId").value = protocolVersionId || "";
   document.getElementById("protocolItemRequired").checked = true;
   document.getElementById("protocolItemDialog").showModal();
 }
@@ -580,6 +617,7 @@ document.getElementById("protocolItemForm").addEventListener("submit", event => 
   try {
     createProtocolItem({
       protocolId: document.getElementById("protocolItemProtocolId").value,
+      protocolVersionId: document.getElementById("protocolItemVersionId").value || null,
       title: document.getElementById("protocolItemTitle").value,
       description: document.getElementById("protocolItemDescription").value,
       required: document.getElementById("protocolItemRequired").checked
