@@ -89,6 +89,41 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     assert.equal(await sourceCard.getAttribute('open') !== null, true);
     assert.equal(await addVersion.evaluate(element => element === document.activeElement), true);
 
+    // Footer actions use the original taskForm for roots and recursive children.
+    async function addFromFooter(key, name, parentId) {
+      const button = page.locator(`[data-focus-key="${key}"]`);
+      await button.click();
+      assert.equal(await page.locator('#taskDialog').evaluate(el=>el.open),true);
+      assert.equal(await page.locator('#taskParentId').inputValue(),parentId || '');
+      await page.locator('#taskName').fill(name);
+      await page.locator('#taskForm button[value="default"]').click();
+      assert.equal(await button.evaluate(el=>el===document.activeElement),true);
+      return page.evaluate(({name,project})=>state.tasks.find(t=>t.name===name&&t.projectId===project).id,{name,project:ids.project});
+    }
+    const rootAdded=await addFromFooter(`add-root-bottom-${ids.project}`,'Footer root',null);
+    const childAdded=await addFromFooter(`add-child-bottom-${ids.parent}`,'Footer child',ids.parent);
+    const deepAdded=await addFromFooter(`add-child-bottom-${ids.child}`,'Footer grandchild',ids.child);
+    assert.equal(await page.evaluate(ids=>getSiblingTasks(ids.project).at(-1).id,ids),rootAdded);
+    assert.equal(await page.evaluate(ids=>getChildren(ids.parent).at(-1).id,ids),childAdded);
+    assert.equal(await page.evaluate(ids=>getChildren(ids.child).at(-1).id,ids),deepAdded);
+    for (const width of [320,375,600,1280]) {
+      await page.setViewportSize({width,height:900});
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+    }
+    await page.locator(`[data-focus-key="move-up-${rootAdded}"]`).click();
+    await page.reload();await page.evaluate(ids=>openProject(ids.project),ids);
+    assert.equal(await page.evaluate(ids=>getSiblingTasks(ids.project).at(-2).id,ids),rootAdded);
+    assert.equal(await page.evaluate(ids=>getChildren(ids.parent).at(-1).id,ids),childAdded);
+    assert.equal(await page.evaluate(ids=>getChildren(ids.child).at(-1).id,ids),deepAdded);
+    assert.equal(await page.locator(`[data-focus-key="add-child-bottom-${deepAdded}"]`).count(),0,'leaf has no child-list footer');
+    const empty=await page.evaluate(()=>{const p=createProject({name:'Empty footer project'});openProject(p.id);return p.id});
+    await page.locator(`[data-focus-key="add-root-bottom-${empty}"]`).click();
+    await page.locator('#taskName').fill('First task');
+    await page.locator('#taskForm button[value="default"]').click();
+    assert.equal(await page.evaluate(id=>getSiblingTasks(id).length,empty),1);
+    await page.evaluate(ids=>openProject(ids.project),ids);
+    await sourceCard.locator('summary').click();
+
     // A rejected deletion is handled by the UI without modifying any records.
     const snapshot = await page.evaluate(ids => {
       const protocol = createProtocol({ name: 'Audit protocol' });

@@ -11,6 +11,7 @@ Een mobiele, generieke project- en checklistwebapp met controle- en reviewfuncti
 - volgorde blijft bewaard na herladen
 - migratie naar schemaVersion 5 bewaart de bestaande volgorde en historische gegevens
 - compacte knoppen met toetsenbordbediening en begrenzing aan begin/einde
+- taak toevoegen onderaan de hoofdtakenlijst en subtaak toevoegen onderaan iedere bestaande childlijst
 
 Zie `docs/v0.7-task-order.md` voor de testscope en handmatige acceptatiecheck.
 

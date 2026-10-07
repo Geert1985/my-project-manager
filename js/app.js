@@ -93,6 +93,7 @@ function renderProject() {
       <button class="primary" onclick="openTaskDialog('${project.id}', null)">＋ Taak</button>
     </div>
     <div>${renderTaskTree(project.id, null)}</div>
+    <div class="task-list-footer"><button class="secondary" type="button" data-focus-key="add-root-bottom-${project.id}" onclick="openTaskDialog('${project.id}', null)">＋ Taak toevoegen</button></div>
   </div>`;
 }
 
@@ -127,7 +128,7 @@ function renderTaskTree(projectId, parentId) {
         <div class="task-details" ${collapsedTaskIds.has(task.id) ? "hidden" : ""}>
           ${task.description ? `<div class="muted small">${esc(task.description)}</div>` : ""}
           ${sources.length ? renderTaskSources(sources) : ""}
-          ${children.length ? `<div class="children">${renderTaskTree(projectId, task.id)}</div>` : ""}
+          ${children.length ? `<div class="children">${renderTaskTree(projectId, task.id)}<div class="task-list-footer"><button class="secondary" type="button" data-focus-key="add-child-bottom-${task.id}" onclick="openTaskDialog('${projectId}', '${task.id}')">＋ Subtaak toevoegen</button></div></div>` : ""}
         </div>
       </div>
     </div>`;

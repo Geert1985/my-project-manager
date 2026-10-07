@@ -179,6 +179,11 @@ button:disabled { cursor:not-allowed; opacity:.55; }
 }
 .task-action-icon:hover { background:#f9fafb; }
 .task-action-delete { color:#b91c1c; }
+.task-list-footer { margin-top:10px; padding-top:8px; }
+.task-list-footer button { max-width:100%; white-space:normal; overflow-wrap:anywhere; min-height:40px; }
+@media (max-width:600px) {
+  .task-list-footer button { width:100%; }
+}
 .task-drag-handle { cursor:grab; touch-action:none; user-select:none; }
 .task-drag-handle.dragging { cursor:grabbing; background:#dbeafe; border-color:#2563eb; }
 .task-header.task-drop-before { box-shadow:0 -3px 0 #2563eb; }

@@ -86,6 +86,15 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     assert.deepEqual(await order(),ids.roots);
     assert.deepEqual(await page.evaluate(ids=>getChildren(ids.roots[0]).map(t=>t.id),ids),[ids.children[1],ids.children[0]]);
 
+    await page.setViewportSize({width:1280,height:1200});
+    const beforeFooter=await snapshot();
+    await mouseStart(ids.roots[2]);
+    const footer=await page.locator(`[data-focus-key="add-root-bottom-${ids.p}"]`).boundingBox();
+    await page.mouse.move(footer.x+footer.width/2,footer.y+footer.height/2,{steps:8});
+    await page.mouse.up();
+    assert.equal(await snapshot(),beforeFooter,'footer is not a drag/drop target');
+    await page.setViewportSize({width:375,height:900});
+
     // Edge scrolling is transient; cancelling it does not write task data.
     await page.evaluate(ids=>{for(let i=0;i<30;i++)createTask({projectId:ids.p,name:'Scroll '+i});render()},ids);
     await page.evaluate(()=>window.scrollTo(0,0));
