@@ -2,6 +2,17 @@
 
 Een mobiele, generieke project- en checklistwebapp met controle- en reviewfunctionaliteit.
 
+## v0.5
+
+- inklapbare protocolkaarten met compacte samenvatting
+- protocolversies nieuwste-eerst in de interface
+- inklapbare bronkaarten binnen taken
+- bronversies nieuwste-eerst in de interface
+- expliciete taakstatusbadges en duidelijkere subtaakhiërarchie
+- consistente dialogen, knoppen, focusstates en lege toestanden
+- schaalbaarheids- en regressietests afgerond
+- historische integriteit van v0.4 behouden
+
 ## v0.4
 
 - versiebeheer voor controleprotocollen
@@ -36,8 +47,8 @@ Voor GitHub Pages kan de repository rechtstreeks als statische website gepublice
 
 ## Versie
 
-De huidige stabiele ontwikkelversie is **0.4**. De task-statusmatrix staat in `docs/task-status-matrix.md`.
+De huidige stabiele ontwikkelversie is **0.5**. De task-statusmatrix staat in `docs/task-status-matrix.md`.
 
 ## Toekomst
 
-De architectuur voorziet uitbreidingen voor bronnen, bronversies, controleprotocollen, reviews, notities, tags, zoeken en import/export.
+De eerstvolgende UX-uitbreiding is het inklapbaar maken van taken en subtaken. Verdere uitbreidingen kunnen onder meer notities, tags, zoeken en import/export omvatten.
