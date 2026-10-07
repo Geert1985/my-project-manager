@@ -1,6 +1,14 @@
 # My Projects
 
-Een mobiele, generieke project- en checklistwebapp.
+Een mobiele, generieke project- en checklistwebapp met controle- en reviewfunctionaliteit.
+
+## v0.3
+
+- controleprotocollen en controlepunten
+- bronversies en reproduceerbare checks
+- reviewworkflow
+- controle- en reviewdashboard
+- statusindicatoren en navigatie naar controlehistoriek
 
 ## v0.1
 
@@ -20,7 +28,7 @@ Voor GitHub Pages kan de repository rechtstreeks als statische website gepublice
 
 ## Versie
 
-De huidige ontwikkelversie is **0.1.1**. De task-statusmatrix staat in `docs/task-status-matrix.md`.
+De huidige stabiele ontwikkelversie is **0.3**. De task-statusmatrix staat in `docs/task-status-matrix.md`.
 
 ## Toekomst
 
