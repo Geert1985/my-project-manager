@@ -25,6 +25,21 @@ function getProject(projectId) {
 
 function deleteProject(projectId) {
   state.projects = state.projects.filter(p => p.id !== projectId);
-  state.tasks = state.tasks.filter(t => t.projectId !== projectId);
+
+  const taskIds = new Set(
+    state.tasks.filter(task => task.projectId === projectId).map(task => task.id)
+  );
+
+  state.tasks = state.tasks.filter(task => task.projectId !== projectId);
+
+  const sourceIds = new Set(
+    state.sources
+      .filter(source => source.projectId === projectId)
+      .map(source => source.id)
+  );
+
+  state.sources = state.sources.filter(source => source.projectId !== projectId);
+  state.sourceVersions = state.sourceVersions.filter(version => !sourceIds.has(version.sourceId));
+
   saveState();
 }
